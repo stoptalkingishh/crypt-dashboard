@@ -1,0 +1,19 @@
+{
+  "name": "crypt-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client-side launcher + GitHub/home dashboard. No build step and no runtime dependencies.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ismael Rodriguez (stoptalkingishh)",
+  "homepage": "https://cryptanalyst.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stoptalkingishh/crypt-dashboard.git"
+  },
+  "scripts": {
+    "serve": "./serve.sh",
+    "check": "node scripts/check.mjs",
+    "inject:public": "node scripts/inject-env.mjs public/index.html",
+    "inject:secure": "node scripts/inject-env.mjs secure/index.html"
+  }
+}

@@ -1,0 +1,21 @@
+# Local / OS
+.DS_Store
+*.log
+
+# Terraform
+cloudflare/.terraform/
+cloudflare/.terraform.lock.hcl
+cloudflare/*.tfstate
+cloudflare/*.tfstate.*
+cloudflare/crash.log
+cloudflare/terraform.tfvars
+cloudflare/*.auto.tfvars
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Wrangler
+.wrangler/
+node_modules/

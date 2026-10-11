@@ -3,41 +3,29 @@
 ## Principles
 
 1. **Zero build.** No bundler, transpiler, or package manager is required to
-   deploy. The shipped files are the source files.
+   deploy. The shipped file is the source file.
 2. **Client-side only.** There is no backend, database, or API of our own. The
    browser talks directly to Google (OAuth/Drive/Gemini) and GitHub.
-3. **Self-contained surfaces.** `public/index.html` and `secure/index.html` are
-   each a single HTML file with inline CSS and JS. They share no runtime files,
-   so each can be deployed to a different host without a shared origin.
-4. **Reproducible by config.** State is a single JSON object in `localStorage`
-   (and optionally Google Drive); no server-side settings.
+3. **Self-contained.** `public/index.html` is a single HTML file with inline CSS
+   and JS. It is a complete, offline-capable app you can open from `file://`.
+4. **Per-user config.** State is a single JSON object in `localStorage` (and
+   optionally Google Drive). Personal data is never baked into the file; users
+   configure it after Google sign-in.
 
-## Two surfaces, one repo
+## Single surface
 
-| | Public | Secure |
-|---|---|---|
-| File | `public/index.html` | `secure/index.html` |
-| Host | GitHub Pages | Cloudflare Pages |
-| Gate | none | Cloudflare Access (SSO) |
-| Indexing | `index, follow` | `noindex, nofollow` |
-| State key | `cryptdash:public:v1` | `cryptdash:state:v1` |
-| GitHub | public repos only | token allowed → private repos |
-| Homelab tiles | absent (never committed here) | present |
-| Admin UI | compact settings sheet | full admin panel |
+| | Value |
+|---|---|
+| File | `public/index.html` |
+| Host | GitHub Pages |
+| Indexing | `noindex, nofollow` |
+| State key | `cryptdash:state:v1` |
+| Personal data | none in source; entered per-user at runtime |
 
-The public surface **must never** contain internal hostnames or secrets. This is
-enforced by `make check` (`scripts/check.mjs`).
+`make check` enforces that `public/index.html` contains no internal/LAN
+hostnames and no committed credentials.
 
-## Why single-file surfaces
-
-A shared `assets/app.js` would break the "independent surfaces" rule: GitHub
-Pages can only publish `public/`, and Cloudflare Pages publishes `secure/`, so a
-repo-root `assets/` directory is outside both artifacts. Rather than introduce a
-copy/build step, each surface inlines its own copy of the engine. The trade-off
-is duplication (documented in [CONTRIBUTING.md](../CONTRIBUTING.md)); the payoff
-is that each file is a complete, offline-capable app you can open from `file://`.
-
-## Module map (identical in both surfaces)
+## Module map
 
 ```
 index.html
@@ -45,7 +33,7 @@ index.html
 ├─ theme bootstrap     inline, runs before first paint (no flash)
 ├─ window.HS_ENV       OAuth config placeholders (injected at deploy)
 └─ app <script>
-   ├─ defaults & state  defaultState()/publicDefault(), load/save, migrate
+   ├─ defaults & state  defaultState(), load/save, migrate
    ├─ helpers           $, esc, faviconFor, timeAgo, toast
    ├─ theme             applyTheme()
    ├─ clock             renderClock() (1 s interval)
@@ -56,12 +44,12 @@ index.html
    ├─ auth (PKCE)       signInWithGoogle(), handleOAuthCallback(), refresh
    ├─ Drive backup      driveSave()/driveLoad() -> appDataFolder
    ├─ Gemini            loadAi(), runGemini(), openAi()
-   ├─ admin / settings  openAdmin()/openSettings(), collectAdmin()
+   ├─ admin             openAdmin(), collectAdmin()
    └─ boot              renderClock, initWeather, handleOAuthCallback, boot
 ```
 
-`type: "github"` and `type: "news"` categories are rendered by dedicated views
-(`#view-repos`, `#view-news`); `type: "links"` categories render the tile grid.
+`type: "github"` categories render `#view-repos`; `type: "links"` categories
+render the tile grid.
 
 ## Data flow
 
@@ -74,13 +62,13 @@ Drive backup  drive v3 (appDataFolder) ◀─────┘               │
 Gemini        generativelanguage.googleapis.com ◀────────────┘ (direct, BYO key)
 ```
 
-- GitHub responses are cached 10 min (`cryptdash:*ghcache*`) to respect rate
+- GitHub responses are cached 10 min (`cryptdash:ghcache:v1`) to respect rate
   limits (60/hr unauthenticated, 5 000/hr with a token).
 - Weather is cached 15 min.
 - Drive backup is manual or debounced (2.5 s) when "auto back up" is on.
 
 ## Extending
 
-- New tile category: add an entry to `settings.categories` (admin UI or default).
+- New tile category: add an entry to `settings.categories` (Admin UI or default).
 - New dynamic view: give a category a new `type`, add a `<section id="view-X">`,
   and branch in `renderView()`. See [NEWS.md](NEWS.md) for the planned one.

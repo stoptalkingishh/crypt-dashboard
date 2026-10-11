@@ -4,15 +4,18 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#0a0e0f" />
-<meta name="description" content="Public Crypt Dashboard launcher + live GitHub repository dashboard. Client-side only, no login, no ads." />
-<meta name="robots" content="index, follow" />
+<meta name="description" content="Crypt Dashboard — personal launcher + GitHub dashboard. Client-side only, no backend, no ads." />
+<meta name="robots" content="noindex, nofollow" />
 <title>Crypt Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230a0e0f'/%3E%3Cpath d='M5 12h14M12 5v14' stroke='%2342e296' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E" />
 <script>
+  // Theme bootstrap — runs before first paint to avoid flash.
   (() => {
     try {
       const s = localStorage.getItem("cryptdash:theme") || "auto";
-      const theme = s === "light" || s === "dark" ? s : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      const theme = s === "light" || s === "dark"
+        ? s
+        : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
       document.documentElement.dataset.theme = theme;
       document.querySelector('meta[name="theme-color"]').setAttribute("content", theme === "dark" ? "#0a0e0f" : "#f6f6f3");
     } catch {}
@@ -20,37 +23,71 @@
 </script>
 <style>
   :root {
-    --bg: #0a0e0f; --bg-soft: #101617; --panel: #121a1b; --panel-2: #16201f;
-    --border: #223030; --border-strong: #2f4342; --text: #dfe7e4; --muted: #8ba09b;
-    --faint: #5b6f6b; --accent: #42e296; --accent-2: #61a8ff; --danger: #ff6b6b; --warn: #ffcc66;
+    --bg: #0a0e0f;
+    --bg-soft: #101617;
+    --panel: #121a1b;
+    --panel-2: #16201f;
+    --border: #223030;
+    --border-strong: #2f4342;
+    --text: #dfe7e4;
+    --muted: #8ba09b;
+    --faint: #5b6f6b;
+    --accent: #42e296;
+    --accent-2: #61a8ff;
+    --danger: #ff6b6b;
+    --warn: #ffcc66;
     --radius: 10px;
     --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace;
     --shadow: 0 10px 30px rgba(0,0,0,.35);
   }
   html[data-theme="light"] {
-    --bg: #f6f6f3; --bg-soft: #eeece6; --panel: #ffffff; --panel-2: #f7f6f2;
-    --border: #dcd9d0; --border-strong: #c4c0b4; --text: #1b2320; --muted: #5c6a65;
-    --faint: #8b968f; --accent: #0f9d63; --accent-2: #1d6fd1; --shadow: 0 10px 30px rgba(40,40,30,.12);
+    --bg: #f6f6f3;
+    --bg-soft: #eeece6;
+    --panel: #ffffff;
+    --panel-2: #f7f6f2;
+    --border: #dcd9d0;
+    --border-strong: #c4c0b4;
+    --text: #1b2320;
+    --muted: #5c6a65;
+    --faint: #8b968f;
+    --accent: #0f9d63;
+    --accent-2: #1d6fd1;
+    --shadow: 0 10px 30px rgba(40,40,30,.12);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
   a { color: inherit; text-decoration: none; }
-  button, input, select { font: inherit; color: inherit; }
+  button, input, select, textarea { font: inherit; color: inherit; }
   ::selection { background: var(--accent); color: #04110a; }
+
   #app { max-width: 1120px; margin: 0 auto; padding: 22px 20px 60px; opacity: 0; transition: opacity .25s ease; }
   #app.ready { opacity: 1; }
+
+  /* ---------- top bar ---------- */
   .topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
   .brand { display: flex; align-items: baseline; gap: 8px; font-weight: 700; letter-spacing: .3px; }
   .brand .dollar { color: var(--accent); }
   .brand .cursor { display: inline-block; width: 8px; height: 15px; background: var(--accent); animation: blink 1.1s steps(1) infinite; transform: translateY(2px); }
   @keyframes blink { 50% { opacity: 0; } }
   .topbar .spacer { flex: 1; }
-  .iconbtn { background: var(--panel); border: 1px solid var(--border); color: var(--muted); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; transition: .15s; }
+  .iconbtn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted);
+    width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; font-size: 15px; transition: .15s;
+  }
   .iconbtn:hover { color: var(--text); border-color: var(--border-strong); background: var(--panel-2); }
   .iconbtn.accent { color: var(--accent); }
   .iconbtn[disabled] { opacity: .5; cursor: default; }
-  .gh-user { color: var(--faint); font-size: 12px; }
+  .gh-user { color: var(--faint); font-size: 12px; margin-right: 2px; }
   .usership { display: inline-flex; align-items: center; gap: 7px; background: var(--panel); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 5px 11px 5px 5px; cursor: pointer; font-size: 12px; transition: .15s; }
   .usership:hover { border-color: var(--border-strong); color: var(--text); }
   .usership img, .usership .ava, .usership .g { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
@@ -59,33 +96,24 @@
   .usership .unm { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .greet { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
   .ai-out { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; white-space: pre-wrap; font-size: 12.5px; color: var(--text); max-height: 340px; overflow: auto; }
-  .news-grid { display: flex; flex-direction: column; gap: 12px; }
-  .story { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-  .story:hover { border-color: var(--border-strong); }
-  .story .stitle { font-size: 14.5px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-  .story .stitle a { color: var(--accent-2); }
-  .story .smeta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--faint); font-size: 11.5px; margin-bottom: 4px; }
-  .biasbar { display: flex; height: 7px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); margin: 8px 0; }
-  .biasbar span { height: 100%; }
-  .biasbar .left { background: #5b9bd5; } .biasbar .center { background: #9aa0a6; } .biasbar .right { background: #e06666; }
-  .parts { display: flex; gap: 14px; flex-wrap: wrap; color: var(--faint); font-size: 11.5px; margin-bottom: 8px; }
-  .parts b.left { color: #6fa8dc; } .parts b.center { color: #b0b6bb; } .parts b.right { color: #e88; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .chip { font-size: 10.5px; border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; color: var(--muted); }
-  .chip.left { border-color: #5b9bd5; color: #8bb8e0; } .chip.center { border-color: #9aa0a6; } .chip.right { border-color: #e06666; color: #f0a0a0; }
-  .badge-spot { font-size: 10px; background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); border-radius: 5px; padding: 1px 6px; }
-  .badge-frame { font-size: 10px; background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); border-radius: 5px; padding: 1px 6px; }
-  .head { font-size: 12px; color: var(--muted); display: flex; gap: 7px; margin: 3px 0; }
-  .head .dotl { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto; }
-  .head.left .dotl { background: #5b9bd5; } .head.center .dotl { background: #9aa0a6; } .head.right .dotl { background: #e06666; }
-  .story .sactions { display: flex; gap: 8px; margin-top: 10px; }
+
+  /* ---------- hero ---------- */
   .hero { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
   .clock { margin: 0; font-size: 52px; font-weight: 300; letter-spacing: -1px; line-height: 1; }
   .clock .mer { font-size: 18px; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
   .daterow { color: var(--muted); margin-top: 6px; font-size: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .dot { color: var(--faint); } .wx { color: var(--text); } .wx .ic { color: var(--warn); margin-right: 3px; } .wx .loc { color: var(--faint); }
+  .dot { color: var(--faint); }
+  .wx { color: var(--text); }
+  .wx .ic { color: var(--warn); margin-right: 3px; }
+  .wx .loc { color: var(--faint); }
+
+  /* ---------- search ---------- */
   .search { position: relative; margin-bottom: 14px; }
-  .search input { width: 100%; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 15px 118px 15px 18px; font-size: 15px; outline: none; transition: .15s; box-shadow: var(--shadow); }
+  .search input {
+    width: 100%; background: var(--panel); border: 1px solid var(--border-strong);
+    border-radius: var(--radius); padding: 15px 118px 15px 18px; font-size: 15px;
+    outline: none; transition: .15s; box-shadow: var(--shadow);
+  }
   .search input::placeholder { color: var(--faint); }
   .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
   .search .hint { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 12px; pointer-events: none; opacity: 0; transition: opacity .15s; }
@@ -93,24 +121,46 @@
   .bangbar { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--faint); font-size: 11.5px; margin: 0 2px 22px; }
   .bangbar b { color: var(--muted); font-weight: 500; }
   .bangbar kbd { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; color: var(--muted); }
+
+  /* ---------- tabs ---------- */
   .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
-  .tab { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 13px; border-radius: 999px; cursor: pointer; font-size: 12.5px; transition: .15s; }
+  .tab {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 13px; border-radius: 999px; cursor: pointer; font-size: 12.5px; transition: .15s;
+  }
   .tab:hover { color: var(--text); border-color: var(--border-strong); }
   .tab.active { color: #06120c; background: var(--accent); border-color: var(--accent); font-weight: 600; }
   html[data-theme="light"] .tab.active { color: #fff; }
   .tab.gh::before { content: "\25CF "; color: var(--accent-2); font-size: 9px; vertical-align: 1px; }
   .tab.gh.active::before { color: var(--accent); }
+
+  /* ---------- grid / tiles ---------- */
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
-  .tile { position: relative; display: flex; flex-direction: column; gap: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px 14px; min-height: 96px; transition: .15s; overflow: hidden; cursor: pointer; }
+  .tile {
+    position: relative; display: flex; flex-direction: column; gap: 10px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 15px 14px; min-height: 96px; transition: .15s; overflow: hidden; cursor: pointer;
+  }
   .tile:hover, .tile:focus-visible { border-color: var(--accent); transform: translateY(-2px); background: var(--panel-2); outline: none; }
   .tile .fav { width: 26px; height: 26px; border-radius: 6px; object-fit: contain; background: color-mix(in srgb, var(--text) 6%, transparent); }
   .tile .fallback { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; font-weight: 700; color: #06120c; background: var(--accent); font-size: 13px; }
   .tile .name { font-size: 13px; font-weight: 600; line-height: 1.25; margin-top: auto; word-break: break-word; }
   .tile .sub { font-size: 11px; color: var(--faint); word-break: break-all; }
+  .tile.drag { opacity: .4; }
+  .tile.dragover { border-color: var(--accent-2); }
+  .tile .badge { position: absolute; top: 8px; right: 8px; font-size: 9.5px; color: var(--faint); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }
+  .tile.add { align-items: center; justify-content: center; color: var(--faint); border-style: dashed; text-align: center; }
+  .tile.add:hover { color: var(--accent); }
+
+  /* ---------- repo cards ---------- */
   .repobar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; color: var(--muted); font-size: 12.5px; }
   .repobar select, .repobar input { background: var(--panel); border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; outline: none; }
+  .repobar .grow { flex: 1; }
   .repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-  .repo { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px; cursor: pointer; transition: .15s; display: flex; flex-direction: column; gap: 8px; }
+  .repo {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 15px; cursor: pointer; transition: .15s; display: flex; flex-direction: column; gap: 8px;
+  }
   .repo:hover, .repo:focus-visible { border-color: var(--accent-2); transform: translateY(-2px); background: var(--panel-2); outline: none; }
   .repo .rname { font-size: 14px; font-weight: 600; color: var(--accent-2); display: flex; align-items: center; gap: 7px; }
   .repo .rname .vis { font-size: 9.5px; color: var(--faint); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; font-weight: 400; }
@@ -122,22 +172,46 @@
   .empty { color: var(--faint); padding: 40px 8px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius); }
   .spinner { width: 16px; height: 16px; border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: -3px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- footer ---------- */
   footer { margin-top: 44px; color: var(--faint); font-size: 11.5px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; border-top: 1px solid var(--border); padding-top: 16px; }
-  footer a:hover { color: var(--accent); } footer .spacer { flex: 1; }
+  footer a:hover { color: var(--accent); }
+  footer .spacer { flex: 1; }
+
+  /* ---------- admin overlay ---------- */
   .overlay { position: fixed; inset: 0; background: rgba(4,8,8,.62); backdrop-filter: blur(3px); z-index: 40; display: flex; justify-content: center; align-items: flex-start; padding: 40px 16px; overflow: auto; }
   .overlay[hidden] { display: none; }
-  .sheet { width: 100%; max-width: 560px; background: var(--bg-soft); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); }
-  .sheet header { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
-  .sheet header h2 { margin: 0; font-size: 15px; } .sheet header .spacer { flex: 1; }
-  .sheet .body { padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .sheet { width: 100%; max-width: 780px; background: var(--bg-soft); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); }
+  .sheet header { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-soft); border-radius: 14px 14px 0 0; }
+  .sheet header h2 { margin: 0; font-size: 15px; }
+  .sheet header .spacer { flex: 1; }
+  .sheet .body { padding: 20px; display: flex; flex-direction: column; gap: 22px; }
+  .fieldset { border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .fieldset > legend { color: var(--accent); font-size: 12px; padding: 0 8px; text-transform: lowercase; letter-spacing: .5px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .row:last-child { margin-bottom: 0; }
   .row label { color: var(--muted); font-size: 12px; min-width: 92px; }
-  .row input, .row select { background: var(--panel); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; outline: none; flex: 1; min-width: 120px; }
-  .row input:focus { border-color: var(--accent); }
+  .row input, .row select, .row textarea { background: var(--panel); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; outline: none; flex: 1; min-width: 120px; }
+  .row input:focus, .row textarea:focus { border-color: var(--accent); }
+  .row .small { flex: 0 0 90px; min-width: 70px; }
   .btn { background: var(--panel-2); border: 1px solid var(--border-strong); color: var(--text); padding: 7px 13px; border-radius: 8px; cursor: pointer; font-size: 12.5px; transition: .15s; }
-  .btn:hover { border-color: var(--accent); } .btn.primary { background: var(--accent); border-color: var(--accent); color: #06120c; font-weight: 600; }
-  .hint-text { color: var(--faint); font-size: 11.5px; }
-  .modal-card { width: 100%; max-width: 640px; background: var(--bg-soft); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #06120c; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+  .hint-text { color: var(--faint); font-size: 11.5px; margin: 4px 0 0; }
+  .cat-editor { border: 1px solid var(--border); border-radius: 9px; margin-bottom: 10px; overflow: hidden; }
+  .cat-editor > .cat-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--panel); }
+  .cat-editor > .cat-head input { background: transparent; border: none; outline: none; flex: 1; font-weight: 600; }
+  .cat-editor .tiles { padding: 4px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+  .tile-row { display: flex; gap: 6px; align-items: center; }
+  .tile-row input { flex: 1; min-width: 0; background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; outline: none; }
+  .tile-row input:focus { border-color: var(--accent); }
+  .tile-row .url { flex: 0 0 42%; }
+  .tile-row .grip { color: var(--faint); cursor: grab; user-select: none; }
+
+  /* ---------- repo detail modal ---------- */
+  .modal-card { width: 100%; max-width: 680px; background: var(--bg-soft); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
   .modal-card .mhead { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
   .modal-card .mhead h3 { margin: 0; font-size: 17px; color: var(--accent-2); }
   .modal-card .mhead .sub { color: var(--faint); font-size: 12px; margin-top: 4px; }
@@ -154,9 +228,21 @@
   .commit .sha { color: var(--accent); }
   .commit .msg { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .commit .when { color: var(--faint); white-space: nowrap; }
+
+  /* ---------- toast ---------- */
   .toasts { position: fixed; bottom: 22px; right: 22px; display: flex; flex-direction: column; gap: 8px; z-index: 60; }
-  .toast { background: var(--panel); border: 1px solid var(--border-strong); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; box-shadow: var(--shadow); max-width: 340px; }
-  @media (max-width: 620px) { .clock { font-size: 40px; } .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } .repo-grid { grid-template-columns: 1fr; } .row label { min-width: 100%; } }
+  .toast { background: var(--panel); border: 1px solid var(--border-strong); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; box-shadow: var(--shadow); animation: slidein .2s ease; max-width: 340px; }
+  .toast.err { border-left-color: var(--danger); }
+  @keyframes slidein { from { transform: translateX(20px); opacity: 0; } }
+
+  @media (max-width: 620px) {
+    .clock { font-size: 40px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .repo-grid { grid-template-columns: 1fr; }
+    .sheet { margin: 0; }
+    .row label { min-width: 100%; }
+    .tile-row .url { flex: 1 1 100%; }
+  }
 </style>
 </head>
 <body>
@@ -168,8 +254,9 @@
     <button class="usership" id="usership" title="Sign in with Google"></button>
     <button class="iconbtn" id="btn-ai" title="Ask Gemini">&#10022;</button>
     <button class="iconbtn" id="btn-refresh" title="Refresh repo data">&#8635;</button>
+    <button class="iconbtn" id="btn-import" title="Export / import">&#8681;</button>
     <button class="iconbtn" id="btn-theme" title="Toggle theme">&#9681;</button>
-    <a class="iconbtn accent" id="btn-secure" href="#" title="Secure side (Cloudflare Access)">&#128274;</a>
+    <button class="iconbtn accent" id="btn-admin" title="Admin panel">&#9881;</button>
   </div>
 
   <div class="hero">
@@ -191,27 +278,26 @@
   <div class="bangbar" id="bangbar"></div>
 
   <nav class="tabs" id="tabs" aria-label="Categories"></nav>
+
   <section id="view-launcher"><div class="grid" id="grid"></div></section>
   <section id="view-repos" hidden></section>
-  <section id="view-news" hidden></section>
 
   <footer>
-    <span id="foot-status">public &middot; client-side only</span>
+    <span id="foot-status">local-only &middot; data in localStorage &middot; optional Google Drive backup</span>
     <span class="spacer"></span>
-    <a href="#" id="foot-settings">settings</a>
     <a href="#" id="foot-export">export</a>
-    <a id="foot-secure" href="#">secure site</a>
-    <a href="https://github.com/stoptalkingishh" target="_blank" rel="noopener">github</a>
+    <a href="#" id="foot-admin">admin</a>
   </footer>
 </div>
 
 <div class="toasts" id="toasts"></div>
+
 <div class="overlay" id="overlay" hidden></div>
 
 <script>
   /* Injected at deploy time (scripts/inject-env.mjs) from repo secrets, or
-     overridden locally in Settings. Client id is public; the secret ships in
-     the client because Google requires one even for PKCE (see README). */
+     overridden locally in Admin. Client id is public; the secret ships in the
+     client because Google requires one even for PKCE (see README). */
   window.HS_ENV = {
     googleClientId: "__GOOGLE_CLIENT_ID__",
     googleClientSecret: "__GOOGLE_CLIENT_SECRET__"
@@ -220,84 +306,73 @@
 <script>
 "use strict";
 /* ============================================================================
-   Public crypt-dashboard launcher + GitHub repo dashboard (read-only, no secrets).
+   Crypt Dashboard — unified launcher + GitHub repo dashboard
+   Zero-build, single file, client-side only.
    Launcher skeleton inspired by 8tp/startpage (MIT);
-   repo stats inspired by kdippan/github-repository-analyzer (MIT).
+   repo stats inspired by kdippan/github-repository-analyzer (MIT);
+   data model inspired by debba/gh-dashboard "gitdeck" (MIT).
    ========================================================================== */
 
-/* ---- Public configuration — edit freely. No secrets here. ---- */
-const SECURE_URL = "https://home.cryptanalyst.dev";   // TODO: your Cloudflare Access hostname
-const GH_USER = "stoptalkingishh";
-
-const STORAGE_KEY = "cryptdash:public:v1";
-const GH_CACHE_KEY = "cryptdash:public:ghcache:v1";
+const STORAGE_KEY = "cryptdash:state:v1";
+const GH_CACHE_KEY = "cryptdash:ghcache:v1";
 const GH_CACHE_TTL = 10 * 60 * 1000;
 const WX_CACHE_KEY = "cryptdash:wx:v1";
 
-const LANG_COLORS = { JavaScript: "#f1e05a", TypeScript: "#3178c6", Python: "#3572A5", HTML: "#e34c26", CSS: "#563d7c", Shell: "#89e051", Go: "#00ADD8", Rust: "#dea584", Java: "#b07219", "C++": "#f34b7d", C: "#555555", "C#": "#178600", Ruby: "#701516", PHP: "#4F5D95", Vue: "#41b883", Svelte: "#ff3e00", Dockerfile: "#384d54", Makefile: "#427819", Dart: "#00B4AB", Kotlin: "#A97BFF", Swift: "#F05138", Lua: "#000080", Nix: "#7e7eff", SCSS: "#c6538c" };
-const BANGS = {
-  g: { name: "Google", search: "https://www.google.com/search?q={q}", home: "https://www.google.com" },
-  ddg: { name: "DuckDuckGo", search: "https://duckduckgo.com/?q={q}", home: "https://duckduckgo.com" },
-  gh: { name: "GitHub", search: "https://github.com/search?q={q}&type=repositories", home: "https://github.com" },
-  repo: { name: "GitHub repo", search: "https://github.com/{q}" },
-  yt: { name: "YouTube", search: "https://www.youtube.com/results?search_query={q}", home: "https://www.youtube.com" },
-  w: { name: "Wikipedia", search: "https://en.wikipedia.org/wiki/Special:Search?search={q}", home: "https://en.wikipedia.org" },
-  hn: { name: "Hacker News", search: "https://hn.algolia.com/?q={q}", home: "https://news.ycombinator.com" },
-  so: { name: "Stack Overflow", search: "https://stackoverflow.com/search?q={q}", home: "https://stackoverflow.com" },
-  mdn: { name: "MDN", search: "https://developer.mozilla.org/en-US/search?q={q}", home: "https://developer.mozilla.org" },
-  npm: { name: "npm", search: "https://www.npmjs.com/search?q={q}", home: "https://www.npmjs.com" },
-  r: { name: "Reddit", search: "https://www.reddit.com/search/?q={q}", home: "https://www.reddit.com" },
-  maps: { name: "Maps", search: "https://www.google.com/maps/search/?api=1&query={q}", home: "https://www.google.com/maps" },
-  gpt: { name: "ChatGPT", search: "https://chatgpt.com/?q={q}", home: "https://chatgpt.com" },
-  cl: { name: "Claude", search: "https://claude.ai/new?q={q}", home: "https://claude.ai" },
-  pp: { name: "Perplexity", search: "https://www.perplexity.ai/search?q={q}", home: "https://www.perplexity.ai" },
+/* ---------- language colours ---------- */
+const LANG_COLORS = {
+  JavaScript: "#f1e05a", TypeScript: "#3178c6", Python: "#3572A5", HTML: "#e34c26",
+  CSS: "#563d7c", Shell: "#89e051", Go: "#00ADD8", Rust: "#dea584", Java: "#b07219",
+  "C++": "#f34b7d", C: "#555555", "C#": "#178600", Ruby: "#701516", PHP: "#4F5D95",
+  Vue: "#41b883", Svelte: "#ff3e00", Dockerfile: "#384d54", Makefile: "#427819",
+  Dart: "#00B4AB", Kotlin: "#A97BFF", Swift: "#F05138", Lua: "#000080", Nix: "#7e7eff",
+  YAML: "#cb171e", "Jupyter Notebook": "#DA5B0B", SCSS: "#c6538c", R: "#198CE7",
 };
 
-function publicDefault() {
+/* ---------- bangs ---------- */
+const BANGS = {
+  g:    { name: "Google",      search: "https://www.google.com/search?q={q}", home: "https://www.google.com" },
+  ddg:  { name: "DuckDuckGo",  search: "https://duckduckgo.com/?q={q}", home: "https://duckduckgo.com" },
+  gh:   { name: "GitHub",      search: "https://github.com/search?q={q}&type=repositories", home: "https://github.com" },
+  repo: { name: "GitHub repo",  search: "https://github.com/{q}" },
+  yt:   { name: "YouTube",     search: "https://www.youtube.com/results?search_query={q}", home: "https://www.youtube.com" },
+  w:    { name: "Wikipedia",   search: "https://en.wikipedia.org/wiki/Special:Search?search={q}", home: "https://en.wikipedia.org" },
+  hn:   { name: "Hacker News", search: "https://hn.algolia.com/?q={q}", home: "https://news.ycombinator.com" },
+  so:   { name: "Stack Overflow", search: "https://stackoverflow.com/search?q={q}", home: "https://stackoverflow.com" },
+  mdn:  { name: "MDN",         search: "https://developer.mozilla.org/en-US/search?q={q}", home: "https://developer.mozilla.org" },
+  npm:  { name: "npm",         search: "https://www.npmjs.com/search?q={q}", home: "https://www.npmjs.com" },
+  r:    { name: "Reddit",      search: "https://www.reddit.com/search/?q={q}", home: "https://www.reddit.com" },
+  maps: { name: "Maps",        search: "https://www.google.com/maps/search/?api=1&query={q}", home: "https://www.google.com/maps" },
+  gpt:  { name: "ChatGPT",     search: "https://chatgpt.com/?q={q}", home: "https://chatgpt.com" },
+  cl:   { name: "Claude",      search: "https://claude.ai/new?q={q}", home: "https://claude.ai" },
+  pp:   { name: "Perplexity",  search: "https://www.perplexity.ai/search?q={q}", home: "https://www.perplexity.ai" },
+};
+
+/* ---------- default state ---------- */
+function defaultState() {
   return {
+    version: 1,
     settings: {
-      title: "crypt-dashboard", theme: "auto", hour12: true,
+      title: "crypt-dashboard",
+      theme: "auto",
+      hour12: true,
       search: { name: "Google", url: "https://www.google.com/search?q={q}" },
       weather: { latitude: null, longitude: null, unit: "fahrenheit", label: "" },
-      github: { user: GH_USER, sort: "updated", hideForks: false },
-      news: {
-        proxy: "https://api.allorigins.win/raw?url={url}",
-        biasApi: "",
-        clusterThreshold: 0.42,
-        windowHours: 48,
-        blindspotMinSources: 2,
-        minSourcesFilter: 1,
-        blindspotsOnly: false,
-        feeds: [
-          { name: "NPR", url: "https://feeds.npr.org/1001/rss.xml" },
-          { name: "BBC", url: "https://feeds.bbci.co.uk/news/world/rss.xml" },
-          { name: "The Guardian", url: "https://www.theguardian.com/world/rss" },
-          { name: "NYT", url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" },
-          { name: "The Hill", url: "https://thehill.com/news/feed/" },
-          { name: "Fox News", url: "https://moxie.foxnews.com/google-publisher/latest.xml" },
-          { name: "Washington Times", url: "https://www.washingtontimes.com/rss/headlines/news/" },
-          { name: "Reason", url: "https://reason.com/feed/" },
-          { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml" },
-          { name: "DW", url: "https://rss.dw.com/rdf/rss-en-all" },
-        ],
-      },
+      github: { users: [], token: "", sort: "updated", hideForks: false, liveRepos: true },
     },
     categories: [
       { id: "home", name: "Home", type: "links", tiles: [
         { name: "GitHub", url: "https://github.com" },
         { name: "Hacker News", url: "https://news.ycombinator.com" },
         { name: "Wikipedia", url: "https://en.wikipedia.org" },
-        { name: "WindowSwap", url: "https://www.window-swap.com" },
-        { name: "Radio Garden", url: "https://radio.garden" },
+        { name: "MDN", url: "https://developer.mozilla.org" },
       ] },
-      { id: "news", name: "News", type: "news", tiles: [] },
       { id: "repos", name: "Repos", type: "github", tiles: [] },
       { id: "dev", name: "Dev", type: "links", tiles: [
         { name: "GitHub", url: "https://github.com" },
         { name: "Stack Overflow", url: "https://stackoverflow.com" },
         { name: "MDN", url: "https://developer.mozilla.org" },
         { name: "npm", url: "https://www.npmjs.com" },
-        { name: "caniuse", url: "https://caniuse.com" },
+        { name: "GitLab", url: "https://gitlab.com" },
       ] },
       { id: "ai", name: "AI", type: "links", tiles: [
         { name: "ChatGPT", url: "https://chatgpt.com" },
@@ -315,38 +390,68 @@ function publicDefault() {
   };
 }
 
+/* ---------- state ---------- */
 let state = loadState();
-let activeCat = "home";
-let repoData = null, repoLoading = false;
+let activeCat = state.categories.find(c => c.id === "home") ? "home" : (state.categories[0] || {}).id;
+let repoData = null;       // { repos: [], at: ts, error }
+let repoLoading = false;
 
 function loadState() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch {}
-  if (!saved) return publicDefault();
-  const def = publicDefault();
-  saved.settings = Object.assign({}, def.settings, saved.settings || {});
-  saved.settings.search = Object.assign({}, def.settings.search, saved.settings.search || {});
-  saved.settings.weather = Object.assign({}, def.settings.weather, saved.settings.weather || {});
-  saved.settings.github = Object.assign({}, def.settings.github, saved.settings.github || {});
-  if (!Array.isArray(saved.categories) || !saved.categories.length) saved.categories = def.categories;
-  saved.categories.forEach(c => { if (!Array.isArray(c.tiles)) c.tiles = []; });
-  return saved;
+  if (!saved) return defaultState();
+  return migrate(saved);
 }
-function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {} if (typeof scheduleDriveBackup === "function") scheduleDriveBackup(); }
+function migrate(s) {
+  const def = defaultState();
+  s.settings = Object.assign({}, def.settings, s.settings || {});
+  s.settings.search = Object.assign({}, def.settings.search, s.settings.search || {});
+  s.settings.weather = Object.assign({}, def.settings.weather, s.settings.weather || {});
+  s.settings.github = Object.assign({}, def.settings.github, s.settings.github || {});
+  if (!Array.isArray(s.categories) || !s.categories.length) s.categories = def.categories;
+  s.categories.forEach(c => { if (!Array.isArray(c.tiles)) c.tiles = []; });
+  return s;
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+  if (typeof scheduleDriveBackup === "function") scheduleDriveBackup();
+}
 
+/* ---------- helpers ---------- */
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-function hostOf(url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } }
-function faviconFor(url) { const h = hostOf(url); return h ? "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(h) : ""; }
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+function hostOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
+}
+function faviconFor(url) {
+  const h = hostOf(url);
+  if (!h) return "";
+  return "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(h);
+}
 function timeAgo(iso) {
-  const d = new Date(iso).getTime(); if (isNaN(d)) return "";
+  const d = new Date(iso).getTime();
+  if (isNaN(d)) return "";
   const s = Math.max(1, Math.floor((Date.now() - d) / 1000));
-  for (const [sec, label] of [[31536000, "y"], [2592000, "mo"], [604800, "w"], [86400, "d"], [3600, "h"], [60, "m"], [1, "s"]]) if (s >= sec) return Math.floor(s / sec) + label + " ago";
+  const steps = [[31536000, "y"], [2592000, "mo"], [604800, "w"], [86400, "d"], [3600, "h"], [60, "m"], [1, "s"]];
+  for (const [sec, label] of steps) if (s >= sec) return Math.floor(s / sec) + label + " ago";
   return "just now";
 }
-function fmtNum(n) { if (n == null) return "0"; return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(n); }
-function toast(msg) { const el = document.createElement("div"); el.className = "toast"; el.textContent = msg; $("toasts").appendChild(el); setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 250); }, 3200); }
+function fmtNum(n) {
+  if (n == null) return "0";
+  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k";
+  return String(n);
+}
+function toast(msg, isErr) {
+  const el = document.createElement("div");
+  el.className = "toast" + (isErr ? " err" : "");
+  el.textContent = msg;
+  $("toasts").appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 250); }, 3200);
+}
 
+/* ---------- theme ---------- */
 function applyTheme() {
   const pref = state.settings.theme || "auto";
   const theme = pref === "auto" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : pref;
@@ -355,50 +460,97 @@ function applyTheme() {
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if ((state.settings.theme || "auto") === "auto") applyTheme(); });
 
+/* ---------- clock ---------- */
 function renderClock() {
-  const now = new Date(); let h = now.getHours(); let mer = "";
+  const now = new Date();
+  let h = now.getHours();
+  let mer = "";
   if (state.settings.hour12) { mer = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; }
   $("time").textContent = String(h).padStart(state.settings.hour12 ? 1 : 2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
   $("mer").textContent = mer;
   $("date").textContent = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 }
 
-const WX_CODES = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Rime fog", 51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle", 61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain", 71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains", 80: "Light showers", 81: "Showers", 82: "Heavy showers", 85: "Snow showers", 86: "Snow showers", 95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm" };
+/* ---------- weather (Open-Meteo, keyless) ---------- */
+const WX_CODES = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Rime fog",
+  51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle", 56: "Freezing drizzle", 57: "Freezing drizzle",
+  61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain",
+  71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains", 80: "Light showers", 81: "Showers",
+  82: "Heavy showers", 85: "Snow showers", 86: "Snow showers", 95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm" };
+
 async function initWeather() {
   const cfg = state.settings.weather || {};
   if (cfg.latitude == null || cfg.longitude == null) { $("wx").hidden = true; $("wx-dot").hidden = true; return; }
-  let cached = null; try { cached = JSON.parse(localStorage.getItem(WX_CACHE_KEY)); } catch {}
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(WX_CACHE_KEY)); } catch {}
   if (cached && cached.current && Date.now() - cached.at < 15 * 60 * 1000 && cached.lat === cfg.latitude && cached.lon === cfg.longitude) { renderWeather(cached.current, cfg); return; }
   try {
-    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + cfg.latitude + "&longitude=" + cfg.longitude + "&current=temperature_2m,weather_code&temperature_unit=" + (cfg.unit || "fahrenheit") + "&timezone=auto";
-    const r = await fetch(url); if (!r.ok) return; const data = await r.json(); if (!data.current) return;
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + cfg.latitude + "&longitude=" + cfg.longitude +
+      "&current=temperature_2m,weather_code&temperature_unit=" + (cfg.unit || "fahrenheit") + "&timezone=auto";
+    const r = await fetch(url);
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data.current) return;
     renderWeather(data.current, cfg);
     localStorage.setItem(WX_CACHE_KEY, JSON.stringify({ at: Date.now(), lat: cfg.latitude, lon: cfg.longitude, current: data.current }));
   } catch {}
 }
 function renderWeather(cur, cfg) {
-  $("wx-text").textContent = Math.round(cur.temperature_2m) + "° " + (WX_CODES[cur.weather_code] || "");
+  const cond = WX_CODES[cur.weather_code] || "";
+  $("wx-text").textContent = Math.round(cur.temperature_2m) + "° " + cond;
   $("wx-loc").textContent = cfg.label ? "· " + cfg.label : "";
   $("wx").hidden = false; $("wx-dot").hidden = false;
 }
 
+/* ---------- search & bangs ---------- */
 function parseBang(raw) {
   const tokens = raw.trim().split(/\s+/).filter(Boolean);
   const i = tokens.findIndex(t => t.length > 1 && t[0] === "!" && BANGS[t.slice(1).toLowerCase()]);
   if (i === -1) return null;
   return { bang: BANGS[tokens[i].slice(1).toLowerCase()], query: tokens.filter((_, j) => j !== i).join(" ") };
 }
-function looksLikeUrl(raw) { const s = raw.trim(); if (/^https?:\/\//i.test(s)) return s; if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(s) && !s.includes(" ")) return "https://" + s; return null; }
+function looksLikeUrl(raw) {
+  const s = raw.trim();
+  if (/^https?:\/\//i.test(s)) return s;
+  if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(s) && !s.includes(" ")) return "https://" + s;
+  return null;
+}
 function searchDestination(raw) {
   const p = parseBang(raw);
-  if (p) { if (p.query && p.bang.search) return p.bang.search.replace("{q}", encodeURIComponent(p.query)); return p.bang.home || (p.bang.search || "").replace("{q}", ""); }
+  if (p) {
+    if (p.query && p.bang.search) return p.bang.search.replace("{q}", encodeURIComponent(p.query));
+    return p.bang.home || (p.bang.search || "").replace("{q}", "");
+  }
   if (!raw.trim()) return null;
-  const asUrl = looksLikeUrl(raw); if (asUrl) return asUrl;
+  const asUrl = looksLikeUrl(raw);
+  if (asUrl) return asUrl;
   return (state.settings.search.url || "https://www.google.com/search?q={q}").replace("{q}", encodeURIComponent(raw.trim()));
 }
+function initSearch() {
+  const input = $("q"), hint = $("hint");
+  $("search").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const dest = searchDestination(input.value);
+    if (dest) window.location.href = dest;
+  });
+  input.addEventListener("input", () => {
+    const p = parseBang(input.value);
+    hint.classList.toggle("on", !!p);
+    if (p) hint.textContent = "→ " + p.bang.name;
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const tag = (document.activeElement || {}).tagName || "";
+    if (/^(INPUT|TEXTAREA|SELECT)$/i.test(tag) || document.activeElement?.isContentEditable) return;
+    if (e.key === "/") { e.preventDefault(); input.focus(); return; }
+    if (e.key.length === 1) { input.focus(); }
+  });
+}
 
+/* ---------- tabs ---------- */
 function renderTabs() {
-  const tabs = $("tabs"); tabs.innerHTML = "";
+  const tabs = $("tabs");
+  tabs.innerHTML = "";
   state.categories.forEach(c => {
     const b = document.createElement("button");
     b.className = "tab" + (c.type === "github" ? " gh" : "") + (c.id === activeCat ? " active" : "");
@@ -409,66 +561,157 @@ function renderTabs() {
 }
 function currentCategory() { return state.categories.find(c => c.id === activeCat); }
 
+/* ---------- launcher grid ---------- */
 function renderGrid() {
-  const grid = $("grid"); grid.innerHTML = "";
-  const cat = currentCategory(); if (!cat) return;
-  cat.tiles.forEach((t) => {
-    const a = document.createElement("a"); a.className = "tile"; a.href = t.url;
-    a.innerHTML = '<img class="fav" alt="" loading="lazy" src="' + esc(faviconFor(t.url)) + '" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
-      '<div class="fallback" hidden>' + esc((t.name || "?").slice(0, 1).toUpperCase()) + "</div>" +
-      '<div class="name">' + esc(t.name) + "</div>" +
-      '<div class="sub">' + esc(t.sub || hostOf(t.url) || "") + "</div>";
-    grid.appendChild(a);
+  const grid = $("grid");
+  grid.innerHTML = "";
+  const cat = currentCategory();
+  if (!cat) return;
+  cat.tiles.forEach((t, idx) => grid.appendChild(tileEl(t, cat, idx)));
+  const add = document.createElement("div");
+  add.className = "tile add";
+  add.innerHTML = '<div style="font-size:22px">＋</div><div style="font-size:12px">Add tile</div>';
+  add.addEventListener("click", () => openAdmin("tiles"));
+  grid.appendChild(add);
+}
+function tileEl(t, cat, idx) {
+  const a = document.createElement("a");
+  a.className = "tile";
+  a.href = t.url;
+  a.setAttribute("draggable", "true");
+  a.dataset.idx = idx;
+  const badge = t.badge ? '<span class="badge">' + esc(t.badge) + "</span>" : "";
+  a.innerHTML = badge +
+    '<img class="fav" alt="" loading="lazy" src="' + esc(faviconFor(t.url)) + '" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
+    '<div class="fallback" hidden>' + esc((t.name || "?").slice(0, 1).toUpperCase()) + "</div>" +
+    '<div class="name">' + esc(t.name) + "</div>" +
+    '<div class="sub">' + esc(t.sub || hostOf(t.url) || "") + "</div>";
+  // drag reorder
+  a.addEventListener("dragstart", (e) => { a.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
+  a.addEventListener("dragend", () => a.classList.remove("drag"));
+  a.addEventListener("dragover", (e) => { e.preventDefault(); a.classList.add("dragover"); });
+  a.addEventListener("dragleave", () => a.classList.remove("dragover"));
+  a.addEventListener("drop", (e) => {
+    e.preventDefault(); a.classList.remove("dragover");
+    const from = parseInt(e.dataTransfer.getData("text/plain"), 10);
+    const to = idx;
+    if (isNaN(from) || from === to) return;
+    const arr = cat.tiles;
+    const [moved] = arr.splice(from, 1);
+    arr.splice(to, 0, moved);
+    saveState(); renderGrid();
   });
+  return a;
 }
 
-function loadGhCache() { try { const c = JSON.parse(localStorage.getItem(GH_CACHE_KEY)); if (c && Array.isArray(c.repos) && Date.now() - c.at < GH_CACHE_TTL) return c; } catch {} return null; }
-function saveGhCache(repos) { try { localStorage.setItem(GH_CACHE_KEY, JSON.stringify({ at: Date.now(), repos })); } catch {} }
+/* ---------- GitHub repo view ---------- */
+function loadGhCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(GH_CACHE_KEY));
+    if (c && Array.isArray(c.repos) && Date.now() - c.at < GH_CACHE_TTL) return c;
+  } catch {}
+  return null;
+}
+function saveGhCache(repos) {
+  try { localStorage.setItem(GH_CACHE_KEY, JSON.stringify({ at: Date.now(), repos })); } catch {}
+}
 async function ghFetch(path) {
-  const res = await fetch("https://api.github.com" + path, { headers: { "Accept": "application/vnd.github+json" } });
-  if (!res.ok) { const err = new Error(res.status === 403 || res.status === 429 ? "Rate limit hit — try again later" : "GitHub API " + res.status); err.status = res.status; throw err; }
+  const token = (state.settings.github.token || "").trim();
+  const headers = { "Accept": "application/vnd.github+json" };
+  if (token) headers["Authorization"] = "Bearer " + token;
+  const res = await fetch("https://api.github.com" + path, { headers });
+  if (!res.ok) {
+    let msg = "GitHub API " + res.status;
+    if (res.status === 403 || res.status === 429) msg = "Rate limit hit — add a token in Admin";
+    else if (res.status === 404) msg = "Not found";
+    const err = new Error(msg); err.status = res.status; throw err;
+  }
   return res.json();
 }
 async function fetchRepos(force) {
-  const user = (state.settings.github.user || GH_USER).trim();
-  if (!force) { const cached = loadGhCache(); if (cached) { repoData = { repos: cached.repos, at: cached.at, error: null }; renderView(); return; } }
+  const g = state.settings.github;
+  const users = (g.users || []).map(u => u.trim()).filter(Boolean);
+  if (!users.length) { repoData = { repos: [], at: Date.now(), error: null }; renderView(); return; }
+  if (!force) {
+    const cached = loadGhCache();
+    if (cached) { repoData = { repos: cached.repos, at: cached.at, error: null }; renderView(); return; }
+  }
   repoLoading = true; renderView();
   try {
-    const repos = await ghFetch("/users/" + encodeURIComponent(user) + "/repos?per_page=100&sort=updated");
-    repoData = { repos, at: Date.now(), error: null }; saveGhCache(repos);
-  } catch (e) { repoData = { repos: (repoData && repoData.repos) || [], at: Date.now(), error: e.message }; }
-  repoLoading = false; renderView();
+    const all = [];
+    for (const u of users) {
+      const repos = await ghFetch("/users/" + encodeURIComponent(u) + "/repos?per_page=100&sort=" + (g.sort || "updated"));
+      repos.forEach(r => all.push(r));
+    }
+    repoData = { repos: all, at: Date.now(), error: null };
+    saveGhCache(all);
+  } catch (e) {
+    repoData = { repos: (repoData && repoData.repos) || [], at: Date.now(), error: e.message };
+  }
+  repoLoading = false;
+  renderView();
 }
 function renderRepos() {
   const root = $("view-repos");
   const g = state.settings.github;
   let repos = (repoData && repoData.repos) || [];
   if (g.hideForks) repos = repos.filter(r => !r.fork);
-  const toolbar = '<div class="repobar"><span>' + repos.length + " public repos</span>" +
+
+  let toolbar = '<div class="repobar">' +
+    '<span>' + repos.length + " repositor" + (repos.length === 1 ? "y" : "ies") + "</span>" +
+    (repoData && repoData.at ? '<span class="dot">·</span><span>updated ' + esc(timeAgo(new Date(repoData.at).toISOString())) + "</span>" : "") +
     '<input id="repo-filter" type="text" placeholder="filter repos…" style="flex:1;min-width:140px" />' +
-    '<select id="repo-sort">' + ["updated", "pushed", "stars", "name"].map(k => '<option value="' + k + '"' + (g.sort === k ? " selected" : "") + ">" + ({ updated: "recently updated", pushed: "recently pushed", stars: "most stars", name: "name" }[k]) + "</option>").join("") + "</select>" +
-    '<label style="display:flex;gap:6px;align-items:center;min-width:0"><input id="repo-forks" type="checkbox"' + (g.hideForks ? " checked" : "") + ' style="flex:0 0 auto;min-width:0"> hide forks</label></div>';
-  if (repoLoading && !repos.length) { root.innerHTML = toolbar + '<div class="empty"><span class="spinner"></span> loading repositories…</div>'; wireRepoToolbar(); return; }
-  if (repoData && repoData.error && !repos.length) { root.innerHTML = toolbar + '<div class="empty">Could not load repos: ' + esc(repoData.error) + "</div>"; wireRepoToolbar(); return; }
-  if (!repos.length) { root.innerHTML = toolbar + '<div class="empty">No public repositories found.</div>'; wireRepoToolbar(); return; }
-  root.innerHTML = toolbar + '<div class="repo-grid" id="repo-grid"></div>'; wireRepoToolbar(); paintRepos();
+    '<select id="repo-sort">' +
+      ["updated", "pushed", "stars", "name"].map(k => '<option value="' + k + '"' + ((g.sort === k) ? " selected" : "") + ">" + ({ updated: "recently updated", pushed: "recently pushed", stars: "most stars", name: "name" }[k]) + "</option>").join("") +
+    "</select>" +
+    '<label style="display:flex;gap:6px;align-items:center;min-width:0"><input id="repo-forks" type="checkbox"' + (g.hideForks ? " checked" : "") + ' style="flex:0 0 auto;min-width:0"> hide forks</label>' +
+    "</div>";
+
+  if (repoLoading && !repos.length) {
+    root.innerHTML = toolbar + '<div class="empty"><span class="spinner"></span> loading repositories…</div>';
+    wireRepoToolbar(); return;
+  }
+  if (repoData && repoData.error && !repos.length) {
+    root.innerHTML = toolbar + '<div class="empty">Could not load repos: ' + esc(repoData.error) + '<br><br><button class="btn" onclick="openAdmin(\'github\')">Configure GitHub</button></div>';
+    wireRepoToolbar(); return;
+  }
+  if (!repos.length) {
+    root.innerHTML = toolbar + '<div class="empty">No repositories yet. Add a GitHub username in the admin panel.</div>';
+    wireRepoToolbar(); return;
+  }
+  root.innerHTML = toolbar + '<div class="repo-grid" id="repo-grid"></div>';
+  wireRepoToolbar();
+  paintRepos();
 }
 function paintRepos() {
-  const g = state.settings.github, grid = $("repo-grid"); if (!grid) return;
+  const g = state.settings.github;
+  const grid = $("repo-grid");
+  if (!grid) return;
   let repos = ((repoData && repoData.repos) || []).slice();
   if (g.hideForks) repos = repos.filter(r => !r.fork);
   const q = ($("repo-filter") && $("repo-filter").value || "").toLowerCase();
   if (q) repos = repos.filter(r => (r.name + " " + (r.description || "") + " " + (r.language || "")).toLowerCase().includes(q));
-  repos.sort((a, b) => g.sort === "stars" ? b.stargazers_count - a.stargazers_count : g.sort === "name" ? a.name.localeCompare(b.name) : g.sort === "pushed" ? new Date(b.pushed_at) - new Date(a.pushed_at) : new Date(b.updated_at) - new Date(a.updated_at));
+  repos.sort((a, b) => g.sort === "stars" ? b.stargazers_count - a.stargazers_count
+    : g.sort === "name" ? a.name.localeCompare(b.name)
+    : g.sort === "pushed" ? new Date(b.pushed_at) - new Date(a.pushed_at)
+    : new Date(b.updated_at) - new Date(a.updated_at));
+
   grid.innerHTML = "";
   if (!repos.length) { grid.innerHTML = '<div class="empty">No repos match the filter.</div>'; return; }
   repos.forEach(r => {
     const el = document.createElement("div");
     el.className = "repo"; el.tabIndex = 0; el.dataset.full = r.full_name;
     const lang = r.language ? '<span class="lang"><span class="swatch" style="background:' + (LANG_COLORS[r.language] || "#8ba09b") + '"></span>' + esc(r.language) + "</span>" : "";
-    el.innerHTML = '<div class="rname">' + esc(r.name) + '<span class="vis">' + (r.private ? "private" : "public") + "</span>" + (r.fork ? '<span class="vis">fork</span>' : "") + (r.archived ? '<span class="vis">archived</span>' : "") + "</div>" +
+    const vis = r.private ? "private" : "public";
+    el.innerHTML =
+      '<div class="rname">' + esc(r.name) + '<span class="vis">' + vis + "</span>" + (r.fork ? '<span class="vis">fork</span>' : "") + (r.archived ? '<span class="vis">archived</span>' : "") + "</div>" +
       '<div class="rdesc' + (r.description ? "" : " muted") + '">' + esc(r.description || "No description") + "</div>" +
-      '<div class="rmeta">' + lang + (r.stargazers_count ? "<span>&#9733; " + fmtNum(r.stargazers_count) + "</span>" : "") + (r.forks_count ? "<span>&#9098; " + fmtNum(r.forks_count) + "</span>" : "") + (r.open_issues_count ? "<span>&#9679; " + fmtNum(r.open_issues_count) + " issues</span>" : "") + "<span>" + esc(timeAgo(r.updated_at)) + "</span></div>";
+      '<div class="rmeta">' + lang +
+        (r.stargazers_count ? "<span>&#9733; " + fmtNum(r.stargazers_count) + "</span>" : "") +
+        (r.forks_count ? "<span>&#9098; " + fmtNum(r.forks_count) + "</span>" : "") +
+        (r.open_issues_count ? "<span>&#9679; " + fmtNum(r.open_issues_count) + " issues</span>" : "") +
+        "<span>" + esc(timeAgo(r.updated_at)) + "</span>" +
+      "</div>";
     el.addEventListener("click", () => openRepoModal(r.full_name));
     el.addEventListener("keydown", (e) => { if (e.key === "Enter") openRepoModal(r.full_name); });
     grid.appendChild(el);
@@ -480,56 +723,78 @@ function wireRepoToolbar() {
   if (sort) sort.addEventListener("change", () => { state.settings.github.sort = sort.value; saveState(); fetchRepos(true); });
   if (forks) forks.addEventListener("change", () => { state.settings.github.hideForks = forks.checked; saveState(); paintRepos(); });
 }
+
+/* ---------- repo detail modal ---------- */
 async function openRepoModal(full) {
   const [owner, name] = full.split("/");
-  const overlay = $("overlay"); overlay.hidden = false;
+  const overlay = $("overlay");
+  overlay.hidden = false;
   overlay.innerHTML = '<div class="modal-card"><div class="mhead"><div><h3>' + esc(full) + '</h3><div class="sub"><span class="spinner"></span> loading…</div></div><div style="flex:1"></div><button class="btn" onclick="closeOverlay()">close</button></div></div>';
   overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
   try {
-    const [repo, langs, commits] = await Promise.all([
+    const [repo, langs, commits, contributors] = await Promise.all([
       ghFetch("/repos/" + owner + "/" + name),
       ghFetch("/repos/" + owner + "/" + name + "/languages").catch(() => ({})),
       ghFetch("/repos/" + owner + "/" + name + "/commits?per_page=6").catch(() => []),
+      ghFetch("/repos/" + owner + "/" + name + "/contributors?per_page=8").catch(() => []),
     ]);
     const total = Object.values(langs).reduce((a, b) => a + b, 0) || 1;
     const langList = Object.entries(langs).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const bar = langList.map(([l, v]) => '<span style="width:' + (v / total * 100) + "%;background:" + (LANG_COLORS[l] || "#8ba09b") + '"></span>').join("");
-    const legend = langList.map(([l, v]) => "<span><i style=\"background:" + (LANG_COLORS[l] || "#8ba09b") + "\"></i>" + esc(l) + " " + (v / total * 100).toFixed(1) + "%</span>").join("");
-    const commitsRows = (commits || []).map(c => '<div class="commit"><span class="sha">' + esc((c.sha || "").slice(0, 7)) + '</span><span class="msg">' + esc((c.commit && c.commit.message || "").split("\n")[0]) + '</span><span class="when">' + esc(timeAgo(c.commit && c.commit.author && c.commit.author.date)) + "</span></div>").join("") || '<div class="hint-text">No commits.</div>';
-    overlay.innerHTML = '<div class="modal-card"><div class="mhead"><div style="flex:1"><h3>' + esc(repo.name) + '</h3><div class="sub">' + esc(repo.description || "No description") + '</div><div class="sub" style="margin-top:6px">' + esc(repo.license ? (repo.license.spdx_id || repo.license.name) : "no license") + " · default: " + esc(repo.default_branch) + " · pushed " + esc(timeAgo(repo.pushed_at)) + '</div></div><a class="btn primary" href="' + esc(repo.html_url) + '" target="_blank" rel="noopener">open &#8599;</a><button class="btn" onclick="closeOverlay()">close</button></div>' +
-      '<div class="mbody"><div class="stat-row">' + stat("stars", fmtNum(repo.stargazers_count)) + stat("forks", fmtNum(repo.forks_count)) + stat("watchers", fmtNum(repo.subscribers_count)) + stat("issues", fmtNum(repo.open_issues_count)) + stat("size", fmtNum(Math.round((repo.size || 0) / 1024)) + " MB") + "</div>" +
-      (langList.length ? "<div><div class='hint-text' style='margin-bottom:6px'>languages</div><div class='langbar'>" + bar + "</div><div class='langlist' style='margin-top:8px'>" + legend + "</div></div>" : "") +
-      "<div><div class='hint-text' style='margin-bottom:6px'>recent commits</div>" + commitsRows + "</div></div></div>";
-  } catch (e) { overlay.innerHTML = '<div class="modal-card"><div class="mhead"><div><h3>' + esc(full) + '</h3><div class="sub">' + esc(e.message) + "</div></div><div style='flex:1'></div><button class=\"btn\" onclick=\"closeOverlay()\">close</button></div></div>"; }
+    const langLegend = langList.map(([l, v]) => "<span><i style=\"background:" + (LANG_COLORS[l] || "#8ba09b") + "\"></i>" + esc(l) + " " + (v / total * 100).toFixed(1) + "%</span>").join("");
+    const commitRows = (commits || []).map(c =>
+      '<div class="commit"><span class="sha">' + esc((c.sha || "").slice(0, 7)) + '</span><span class="msg">' +
+      esc((c.commit && c.commit.message || "").split("\n")[0]) + '</span><span class="when">' + esc(timeAgo(c.commit && c.commit.author && c.commit.author.date)) + "</span></div>"
+    ).join("") || '<div class="hint-text">No commits.</div>';
+
+    overlay.innerHTML =
+      '<div class="modal-card">' +
+        '<div class="mhead"><div style="flex:1">' +
+          '<h3>' + esc(repo.name) + "</h3>" +
+          '<div class="sub">' + esc(repo.description || "No description") + "</div>" +
+          '<div class="sub" style="margin-top:6px">' + esc(repo.license ? (repo.license.spdx_id || repo.license.name) : "no license") + " · default: " + esc(repo.default_branch) + " · pushed " + esc(timeAgo(repo.pushed_at)) + "</div>" +
+        "</div>" +
+        '<a class="btn primary" href="' + esc(repo.html_url) + '" target="_blank" rel="noopener">open &#8599;</a>' +
+        '<button class="btn" onclick="closeOverlay()">close</button></div>' +
+        '<div class="mbody">' +
+          '<div class="stat-row">' +
+            stat("stars", fmtNum(repo.stargazers_count)) + stat("forks", fmtNum(repo.forks_count)) +
+            stat("watchers", fmtNum(repo.subscribers_count)) + stat("issues", fmtNum(repo.open_issues_count)) +
+            stat("size", fmtNum(Math.round((repo.size || 0) / 1024)) + " MB") + stat("contributors", fmtNum(repo.network_count ? (contributors || []).length : (contributors || []).length)) +
+          "</div>" +
+          (langList.length ? "<div><div class='hint-text' style='margin-bottom:6px'>languages</div><div class='langbar'>" + bar + "</div><div class='langlist' style='margin-top:8px'>" + langLegend + "</div></div>" : "") +
+          "<div><div class='hint-text' style='margin-bottom:6px'>recent commits</div>" + commitRows + "</div>" +
+        "</div>" +
+      "</div>";
+  } catch (e) {
+    overlay.innerHTML = '<div class="modal-card"><div class="mhead"><div><h3>' + esc(full) + '</h3><div class="sub">' + esc(e.message) + "</div></div><div style='flex:1'></div><button class=\"btn\" onclick=\"closeOverlay()\">close</button></div></div>";
+  }
 }
 function stat(k, v) { return '<div class="stat"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
 function closeOverlay() { const o = $("overlay"); o.hidden = true; o.innerHTML = ""; o.onclick = null; }
 
+/* ---------- view switching ---------- */
 function renderView() {
   const cat = currentCategory();
   const isGh = cat && cat.type === "github";
-  const isNews = cat && cat.type === "news";
-  $("view-launcher").hidden = !!(isGh || isNews);
+  $("view-launcher").hidden = !!isGh;
   $("view-repos").hidden = !isGh;
-  $("view-news").hidden = !isNews;
-  if (isGh) { if (!repoData && !repoLoading) fetchRepos(false); renderRepos(); $("foot-status").textContent = "github api · public · cached 10m · " + esc(state.settings.github.user); }
-  else if (isNews) { renderNews(); $("foot-status").textContent = "news · planned — see docs/NEWS.md"; }
-  else { renderGrid(); $("foot-status").textContent = "public · client-side only"; }
-}
-function renderNews() {
-  const root = $("view-news");
-  root.innerHTML = '<div class="empty">' +
-    "<p><strong>News &amp; media bias — planned</strong></p>" +
-    '<p class="hint-text">This tab will pull RSS feeds (via a configurable CORS proxy), cluster the same story across outlets, and show a left / center / right bias bar, blindspot flags, framing divergence, and Gemini briefings.</p>' +
-    '<p class="hint-text">Design spec: <code>docs/NEWS.md</code></p></div>';
+  if (isGh) {
+    if (!repoData && !repoLoading) { fetchRepos(false); }
+    renderRepos();
+    $("foot-status").textContent = "github api · cached 10m · " + ((state.settings.github.users || []).join(", ") || "no user set");
+  } else {
+    renderGrid();
+    $("foot-status").textContent = "links & repos · data in localStorage";
+  }
 }
 
 /* ============================================================================
    Google sign-in (Authorization Code + PKCE) + Drive backup + Gemini
    Client-side only: no backend. Tokens live in this browser; backups live in
    the user's own Google Drive (hidden appDataFolder).
-   Auth pattern adapted from stoptalkingishh/openquiz (AGPL-3.0-or-later);
-   Drive/token-proxy ideas from stoptalkingishh/battle-rhythm (MIT).
+   Auth (Google PKCE), Drive backup, and Gemini model-fallback patterns are
+   adapted from permissive open-source projects — see ATTRIBUTION.md.
    ========================================================================== */
 const HS_ENV = window.HS_ENV || {};
 const AUTH_KEY = "cryptdash:auth:v1";
@@ -555,7 +820,7 @@ function clearAuth() { try { localStorage.removeItem(AUTH_KEY); } catch {} }
 
 async function signInWithGoogle() {
   const c = gc();
-  if (!c.clientId) { toast("Google client id not set — add it in settings"); return; }
+  if (!c.clientId) { toast("Google client id not set — add it in admin"); return; }
   const verifier = randomString(64);
   const challenge = await sha256b64url(verifier);
   const state = randomString(24);
@@ -660,8 +925,7 @@ async function backupToDrive() { try { await driveSave(state); toast("Backed up 
 async function restoreFromDrive() {
   try {
     const data = await driveLoad();
-    state = Object.assign(publicDefault(), data);
-    state = loadStateFromText(JSON.stringify(data));
+    state = migrate(data);
     saveState(); applyTheme(); closeOverlay(); boot();
     toast("Restored from your Google Drive");
   } catch (e) { toast(e.message); }
@@ -708,7 +972,6 @@ function hsOpenSettings() { closeOverlay(); if (typeof openAdmin === "function")
 function wireUserChip() {
   const u = $("usership"); if (u) u.addEventListener("click", () => { loadAuth() ? openAccountMenu() : signInWithGoogle(); });
   const b = $("btn-ai"); if (b) b.addEventListener("click", openAi);
-  const g = $("btn-google"); if (g) g.addEventListener("click", signInWithGoogle);
 }
 
 /* ---- Gemini (bring-your-own key, client-side) ---- */
@@ -717,7 +980,7 @@ function saveAi(v) { try { localStorage.setItem(AI_KEY, JSON.stringify({ model: 
 async function runGemini(prompt, system) {
   const ai = loadAi();
   const sys = system || "You are a concise assistant embedded in a personal dashboard. Answer briefly and accurately; use short bullet points when summarizing.";
-  if (!ai.apiKey) throw new Error("No Gemini key set. Add one in settings.");
+  if (!ai.apiKey) throw new Error("No Gemini key set. Add one in admin.");
   const models = [ai.model, ...GEMINI_MODELS.filter(m => m !== ai.model)];
   let lastErr = "Gemini request failed";
   for (const model of models) {
@@ -738,10 +1001,10 @@ async function runGemini(prompt, system) {
 function openAi() {
   const overlay = $("overlay"); overlay.hidden = false;
   const ai = loadAi();
-  const hintTxt = ai.apiKey ? "using your API key" : "no key set — add one in settings";
+  const hintTxt = ai.apiKey ? "using your API key" : "no key set — add one in admin";
   overlay.innerHTML = '<div class="modal-card" style="max-width:600px"><div class="mhead"><div style="flex:1"><h3>&#10022; ask gemini</h3><div class="sub">' + esc(hintTxt) + ' · ' + esc(ai.model) + '</div></div><button class="btn" onclick="closeOverlay()">close</button></div>' +
     '<div class="mbody"><textarea id="ai-prompt" rows="3" placeholder="Ask anything, or paste text to summarize…" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px;outline:none;resize:vertical;color:var(--text)"></textarea>' +
-    '<div class="row"><button class="btn primary" id="ai-run">ask</button><button class="btn" id="ai-cfg">settings</button><span class="hint-text" id="ai-status"></span></div>' +
+    '<div class="row"><button class="btn primary" id="ai-run">ask</button><button class="btn" id="ai-cfg">admin</button><span class="hint-text" id="ai-status"></span></div>' +
     '<div id="ai-out" class="ai-out" hidden></div></div></div>';
   overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
   const run = async () => {
@@ -756,71 +1019,219 @@ function openAi() {
   $("ai-cfg").addEventListener("click", hsOpenSettings);
 }
 
-/* ---- minimal settings (location + repo user + theme) ---- */
-function openSettings() {
-  const overlay = $("overlay"); overlay.hidden = false;
-  const s = state.settings;
-  overlay.innerHTML = '<div class="sheet"><header><h2>&#9881; settings</h2><div class="spacer"></div><button class="btn primary" id="set-save">save</button><button class="btn" onclick="closeOverlay()">close</button></header><div class="body">' +
-    '<div class="row"><label>github user</label><input id="s-user" value="' + esc(s.github.user) + '"></div>' +
-    '<div class="row"><label>weather lat</label><input id="s-lat" value="' + (s.weather.latitude ?? "") + '" placeholder="40.7128"></div>' +
-    '<div class="row"><label>weather lon</label><input id="s-lon" value="' + (s.weather.longitude ?? "") + '" placeholder="-74.006"></div>' +
-    '<div class="row"><label></label><button class="btn" id="s-geo">&#10022; use my location</button></div>' +
-    '<div class="row"><label>theme</label><select id="s-theme">' + ["auto", "dark", "light"].map(v => '<option value="' + v + '"' + (s.theme === v ? " selected" : "") + ">" + v + "</option>").join("") + "</select></div>" +
-    '<div class="row"><label>account</label>' + (loadAuth() && loadAuth().profile ? '<span class="hint-text" style="flex:1">' + esc(loadAuth().profile.email) + '</span><button class="btn" id="s-out">sign out</button>' : '<button class="btn" id="s-in">sign in with google</button>') + '</div>' +
-    '<div class="row"><label>google id</label><input id="s-gid" value="' + esc(gc().clientId) + '" placeholder="…apps.googleusercontent.com"></div>' +
-    '<div class="row"><label>google secret</label><input id="s-gsec" type="password" value="' + esc(gc().clientSecret) + '"></div>' +
-    '<div class="row"><label>gemini key</label><input id="s-gkey" type="password" value="' + esc(loadAi().apiKey) + '" placeholder="AIza…"></div>' +
-    '<div class="row"><label>gemini model</label><input id="s-gmodel" value="' + esc(loadAi().model) + '"></div>' +
-    '<div class="row"><button class="btn" id="s-export">export json</button><button class="btn" id="s-import">import json</button><input type="file" id="s-file" accept="application/json" hidden></div>' +
-    '<p class="hint-text">Everything is stored in this browser; sign in to also back it up to your own Google Drive. No server.</p></div></div>';
+/* ---------- admin panel ---------- */
+function openAdmin(section) {
+  const overlay = $("overlay");
+  overlay.hidden = false;
   overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
-  $("s-geo").addEventListener("click", () => { if (!navigator.geolocation) return toast("Geolocation unavailable"); navigator.geolocation.getCurrentPosition(p => { $("s-lat").value = p.coords.latitude.toFixed(4); $("s-lon").value = p.coords.longitude.toFixed(4); }, () => toast("Location denied")); });
-  $("s-export").addEventListener("click", () => { const b = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "crypt-dashboard-public.json"; a.click(); });
-  $("s-import").addEventListener("click", () => $("s-file").click());
-  $("s-file").addEventListener("change", (e) => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { try { state = loadStateFromText(rd.result); applyTheme(); closeOverlay(); boot(); toast("Imported"); } catch { toast("Invalid JSON"); } }; rd.readAsText(f); });
-  const sIn = $("s-in"); if (sIn) sIn.addEventListener("click", signInWithGoogle);
-  const sOut = $("s-out"); if (sOut) sOut.addEventListener("click", signOutGoogle);
-  $("set-save").addEventListener("click", () => {
-    s.github.user = $("s-user").value.trim() || GH_USER;
-    const lat = parseFloat($("s-lat").value), lon = parseFloat($("s-lon").value);
-    s.weather.latitude = isNaN(lat) ? null : lat; s.weather.longitude = isNaN(lon) ? null : lon;
-    s.theme = $("s-theme").value;
-    setEnvOverride({ googleClientId: $("s-gid").value.trim(), googleClientSecret: $("s-gsec").value.trim() });
-    saveAi({ model: $("s-gmodel").value.trim(), apiKey: $("s-gkey").value.trim() });
-    saveState(); localStorage.removeItem(GH_CACHE_KEY); closeOverlay(); applyTheme(); boot(); fetchRepos(true); toast("Saved");
-  });
+  renderAdmin(section);
 }
-function loadStateFromText(txt) { const parsed = JSON.parse(txt); const def = publicDefault(); parsed.settings = Object.assign({}, def.settings, parsed.settings || {}); parsed.categories = parsed.categories || def.categories; return parsed; }
+function renderAdmin(section) {
+  const s = state.settings;
+  const g = s.github;
+  const overlay = $("overlay");
+  const catEditor = state.categories.map((c, ci) => {
+    const tileRows = c.type === "github" ? '<div class="hint-text" style="padding:6px 0">Dynamic — filled from the GitHub API.</div>' :
+      c.tiles.map((t, ti) =>
+        '<div class="tile-row" data-ci="' + ci + '" data-ti="' + ti + '">' +
+          '<input class="tname" value="' + esc(t.name) + '" placeholder="name">' +
+          '<input class="url" value="' + esc(t.url) + '" placeholder="https://…">' +
+          '<button class="btn danger del-tile" data-ci="' + ci + '" data-ti="' + ti + '">&#10005;</button>' +
+        "</div>"
+      ).join("") + '<button class="btn add-tile" data-ci="' + ci + '">+ tile</button>';
+    return '<div class="cat-editor" data-ci="' + ci + '">' +
+      '<div class="cat-head"><span class="grip">&#8942;&#8942;</span><input class="cname" value="' + esc(c.name) + '">' +
+      '<span class="vis">' + c.type + "</span>" +
+      '<button class="btn danger del-cat" data-ci="' + ci + '">delete</button></div>' +
+      '<div class="tiles">' + tileRows + "</div></div>";
+  }).join("");
 
+  overlay.innerHTML =
+    '<div class="sheet"><header><h2>&#9881; admin</h2><div class="spacer"></div>' +
+      '<button class="btn" id="admin-save">save &amp; close</button>' +
+      '<button class="btn" onclick="closeOverlay()">close</button></header>' +
+    '<div class="body">' +
+
+      '<fieldset class="fieldset"><legend>appearance</legend>' +
+        '<div class="row"><label>title</label><input id="set-title" value="' + esc(s.title) + '"></div>' +
+        '<div class="row"><label>theme</label><select id="set-theme">' +
+          ["auto", "dark", "light"].map(v => '<option value="' + v + '"' + (s.theme === v ? " selected" : "") + ">" + v + "</option>").join("") +
+        "</select><label>clock</label><select id=\"set-hour12\"><option value=\"1\"" + (s.hour12 ? " selected" : "") + ">12-hour</option><option value=\"0\"" + (!s.hour12 ? " selected" : "") + ">24-hour</option></select></div>" +
+        '<div class="row"><label>search</label><input id="set-searchname" class="small" value="' + esc(s.search.name) + '"><input id="set-searchurl" value="' + esc(s.search.url) + '"></div>' +
+        '<p class="hint-text">Use {q} where the query goes.</p>' +
+      "</fieldset>" +
+
+      '<fieldset class="fieldset"><legend>weather (open-meteo, keyless)</legend>' +
+        '<div class="row"><label>latitude</label><input id="set-lat" value="' + (s.weather.latitude ?? "") + '" placeholder="e.g. 40.7128"></div>' +
+        '<div class="row"><label>longitude</label><input id="set-lon" value="' + (s.weather.longitude ?? "") + '" placeholder="e.g. -74.006"></div>' +
+        '<div class="row"><label>unit</label><select id="set-unit"><option value="fahrenheit"' + (s.weather.unit === "fahrenheit" ? " selected" : "") + ">fahrenheit</option><option value=\"celsius\"" + (s.weather.unit === "celsius" ? " selected" : "") + ">celsius</option></select>" +
+        '<label>label</label><input id="set-wxlabel" value="' + esc(s.weather.label) + '" placeholder="Home"></div>' +
+        '<div class="row"><button class="btn" id="btn-geo">&#10022; use my location</button><button class="btn" id="btn-wxclear">clear</button></div>' +
+      "</fieldset>" +
+
+      '<fieldset class="fieldset"><legend id="gh-fs">github repos</legend>' +
+        '<div class="row"><label>usernames</label><input id="set-ghusers" value="' + esc((g.users || []).join(", ")) + '" placeholder="username, org"></div>' +
+        '<div class="row"><label>token</label><input id="set-ghtoken" type="password" value="' + esc(g.token) + '" placeholder="optional ghp_… (higher rate limit + private repos)"></div>' +
+        '<p class="hint-text">Token is stored only in this browser\'s localStorage and sent directly to api.github.com. No server.</p>' +
+        '<div class="row"><button class="btn" id="btn-ghclear">clear repo cache</button><button class="btn" id="btn-ghrefresh">refresh now</button></div>' +
+      "</fieldset>" +
+
+      '<fieldset class="fieldset"><legend id="ai-fs">account &amp; gemini</legend>' +
+        '<div class="row"><label>account</label>' + (loadAuth() && loadAuth().profile ? '<span class="hint-text" style="flex:1">' + esc(loadAuth().profile.email) + '</span><button class="btn" id="acct-backup2">back up</button><button class="btn" id="acct-restore2">restore</button><button class="btn" id="btn-gout">sign out</button>' : '<button class="btn" id="btn-gin">sign in with google</button>') + '</div>' +
+        '<div class="row"><label>google id</label><input id="set-gid" value="' + esc(gc().clientId) + '" placeholder="…apps.googleusercontent.com"></div>' +
+        '<div class="row"><label>google secret</label><input id="set-gsec" type="password" value="' + esc(gc().clientSecret) + '"></div>' +
+        '<div class="row"><label>gemini key</label><input id="set-gkey" type="password" value="' + esc(loadAi().apiKey) + '" placeholder="AIza…"></div>' +
+        '<div class="row"><label>gemini model</label><input id="set-gmodel" value="' + esc(loadAi().model) + '"></div>' +
+        '<p class="hint-text">Sign in to back up this configuration to your own Google Drive (hidden app folder). Gemini uses your own API key; nothing is sent to any server of ours.</p>' +
+      "</fieldset>" +
+
+      '<fieldset class="fieldset"><legend>categories &amp; tiles</legend>' +
+        catEditor +
+        '<button class="btn" id="add-cat">+ add category</button>' +
+      "</fieldset>" +
+
+      '<fieldset class="fieldset"><legend>backup</legend>' +
+        '<div class="row"><button class="btn" id="btn-export">export json</button><button class="btn" id="btn-import-file">import json</button><input type="file" id="file-import" accept="application/json" hidden></div>' +
+        '<div class="row"><button class="btn danger" id="btn-reset">reset to defaults</button></div>' +
+      "</fieldset>" +
+
+    "</div></div>";
+
+  // section highlight scroll
+  if (section === "github") setTimeout(() => { const el = $("gh-fs"); el && el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 30);
+  if (section === "ai") setTimeout(() => { const el = $("ai-fs"); el && el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 30);
+
+  wireAdmin();
+}
+function wireAdmin() {
+  const overlay = $("overlay");
+  // live theme + title
+  $("set-theme").addEventListener("change", (e) => { state.settings.theme = e.target.value; saveState(); applyTheme(); });
+  $("set-title").addEventListener("input", (e) => { state.settings.title = e.target.value; $("brand-name").textContent = e.target.value; saveState(); });
+  $("set-hour12").addEventListener("change", (e) => { state.settings.hour12 = e.target.value === "1"; saveState(); renderClock(); });
+  $("btn-geo").addEventListener("click", () => {
+    if (!navigator.geolocation) return toast("Geolocation unavailable", true);
+    navigator.geolocation.getCurrentPosition(
+      (p) => { $("set-lat").value = p.coords.latitude.toFixed(4); $("set-lon").value = p.coords.longitude.toFixed(4); toast("Location captured — click save"); },
+      () => toast("Location permission denied", true)
+    );
+  });
+  $("btn-wxclear").addEventListener("click", () => { $("set-lat").value = ""; $("set-lon").value = ""; });
+  $("btn-ghclear").addEventListener("click", () => { localStorage.removeItem(GH_CACHE_KEY); toast("Repo cache cleared"); });
+  $("btn-ghrefresh").addEventListener("click", () => { collectAdmin(); saveState(); closeOverlay(); fetchRepos(true); });
+  const gin = $("btn-gin"); if (gin) gin.addEventListener("click", signInWithGoogle);
+  const gout = $("btn-gout"); if (gout) gout.addEventListener("click", signOutGoogle);
+  const bk2 = $("acct-backup2"); if (bk2) bk2.addEventListener("click", () => backupToDrive());
+  const rs2 = $("acct-restore2"); if (rs2) rs2.addEventListener("click", () => restoreFromDrive());
+  // tiles / categories
+  overlay.querySelectorAll(".del-tile").forEach(b => b.addEventListener("click", () => {
+    collectAdmin();
+    state.categories[+b.dataset.ci].tiles.splice(+b.dataset.ti, 1); saveState(); renderAdmin();
+  }));
+  overlay.querySelectorAll(".add-tile").forEach(b => b.addEventListener("click", () => {
+    collectAdmin();
+    state.categories[+b.dataset.ci].tiles.push({ name: "New site", url: "https://example.com" }); saveState(); renderAdmin();
+  }));
+  overlay.querySelectorAll(".del-cat").forEach(b => b.addEventListener("click", () => {
+    collectAdmin();
+    if (state.categories.length <= 1) return toast("Keep at least one category", true);
+    state.categories.splice(+b.dataset.ci, 1); saveState(); renderAdmin();
+  }));
+  $("add-cat").addEventListener("click", () => {
+    collectAdmin();
+    state.categories.push({ id: uid(), name: "New category", type: "links", tiles: [] }); saveState(); renderAdmin();
+  });
+  // backup
+  $("btn-export").addEventListener("click", () => {
+    collectAdmin();
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "crypt-dashboard-config.json"; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  $("btn-import-file").addEventListener("click", () => $("file-import").click());
+  $("file-import").addEventListener("change", (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { try { state = migrate(JSON.parse(rd.result)); saveState(); applyTheme(); renderAdmin(); toast("Imported"); } catch { toast("Invalid JSON", true); } };
+    rd.readAsText(f);
+  });
+  $("btn-reset").addEventListener("click", () => {
+    if (!confirm("Reset everything to defaults?")) return;
+    state = defaultState(); saveState(); applyTheme(); closeOverlay(); boot(); toast("Reset complete");
+  });
+  $("admin-save").addEventListener("click", () => { collectAdmin(); closeOverlay(); boot(); toast("Saved"); });
+}
+function collectAdmin() {
+  const s = state.settings;
+  const val = (id) => { const el = $(id); return el ? el.value.trim() : undefined; };
+  s.title = val("set-title") ?? s.title;
+  s.theme = val("set-theme") ?? s.theme;
+  const h12 = val("set-hour12"); if (h12 !== undefined) s.hour12 = h12 === "1";
+  s.search.name = val("set-searchname") ?? s.search.name;
+  s.search.url = val("set-searchurl") ?? s.search.url;
+  const lat = parseFloat(val("set-lat")); const lon = parseFloat(val("set-lon"));
+  s.weather.latitude = isNaN(lat) ? null : lat;
+  s.weather.longitude = isNaN(lon) ? null : lon;
+  s.weather.unit = val("set-unit") ?? s.weather.unit;
+  s.weather.label = val("set-wxlabel") ?? "";
+  s.github.users = (val("set-ghusers") || "").split(",").map(x => x.trim()).filter(Boolean);
+  s.github.token = val("set-ghtoken") ?? s.github.token;
+  setEnvOverride({ googleClientId: val("set-gid") || "", googleClientSecret: val("set-gsec") || "" });
+  saveAi({ model: val("set-gmodel") || GEMINI_MODELS[0], apiKey: val("set-gkey") || "" });
+  // categories / tiles
+  $("overlay").querySelectorAll(".cat-editor").forEach((ce) => {
+    const ci = +ce.dataset.ci;
+    const cat = state.categories[ci]; if (!cat) return;
+    const cn = ce.querySelector(".cname"); if (cn) cat.name = cn.value.trim() || cat.name;
+    if (cat.type === "github") return;
+    const rows = [...ce.querySelectorAll(".tile-row")];
+    cat.tiles = rows.map(r => ({
+      name: r.querySelector(".tname").value.trim() || "untitled",
+      url: r.querySelector(".url").value.trim() || "#",
+    }));
+  });
+  saveState();
+}
+
+/* ---------- boot ---------- */
 function boot() {
   $("brand-name").textContent = state.settings.title || "crypt-dashboard";
-  $("gh-user").textContent = state.settings.github.user;
-  $("bangbar").innerHTML = "Enter opens the top match · " + ["!g", "!gh", "!yt", "!w", "!ddg", "!repo", "!hn", "!so"].map(b => "<b>" + b + "</b> " + esc((BANGS[b.slice(1)] || {}).name || "")).join(" · ") + " · <kbd>/</kbd> focuses search";
-  renderTabs(); renderView(); applyTheme(); $("app").classList.add("ready");
+  $("gh-user").textContent = (state.settings.github.users || []).join(", ");
+  const input = $("q"); if (input) input.placeholder = "Search your sites, type a URL, or use a bang (!gh cats, !yt lofi)…";
+  // bang bar
+  $("bangbar").innerHTML = "Enter opens the top match · " +
+    ["!g", "!gh", "!yt", "!w", "!ddg", "!repo", "!hn", "!so"].map(b => "<b>" + b + "</b> " + esc((BANGS[b.slice(1)] || {}).name || "")).join(" · ") +
+    " · <kbd>/</kbd> focuses search";
+  renderTabs(); renderView(); applyTheme();
+  $("app").classList.add("ready");
   renderUserChip(); renderGreeting(); wireUserChip();
 }
 
-/* ---- wire ---- */
-const secureHref = SECURE_URL && !/example\.com/.test(SECURE_URL) ? SECURE_URL : "#";
-$("btn-secure").href = secureHref; $("foot-secure").href = secureHref;
-$("btn-theme").addEventListener("click", () => { const cur = document.documentElement.dataset.theme; state.settings.theme = cur === "dark" ? "light" : "dark"; localStorage.setItem("cryptdash:theme", state.settings.theme); saveState(); applyTheme(); });
-$("btn-refresh").addEventListener("click", async () => { const b = $("btn-refresh"); b.disabled = true; try { await fetchRepos(true); await initWeather(); toast("Refreshed"); } finally { b.disabled = false; } });
-$("foot-settings").addEventListener("click", (e) => { e.preventDefault(); openSettings(); });
-$("foot-export").addEventListener("click", (e) => { e.preventDefault(); openSettings(); });
+/* ---------- wire top-level ---------- */
+$("btn-theme").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme;
+  state.settings.theme = cur === "dark" ? "light" : "dark";
+  localStorage.setItem("cryptdash:theme", state.settings.theme);
+  saveState(); applyTheme();
+});
+$("btn-admin").addEventListener("click", () => openAdmin());
+$("foot-admin").addEventListener("click", (e) => { e.preventDefault(); openAdmin(); });
+$("foot-export").addEventListener("click", (e) => { e.preventDefault(); const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "crypt-dashboard-config.json"; a.click(); });
+$("btn-import").addEventListener("click", () => openAdmin());
+$("btn-refresh").addEventListener("click", async () => {
+  const btn = $("btn-refresh"); btn.disabled = true;
+  try {
+    if ((currentCategory() || {}).type === "github" || (state.settings.github.users || []).length) { await fetchRepos(true); toast("Refreshed"); }
+    await initWeather();
+  } finally { btn.disabled = false; }
+});
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeOverlay(); });
 
-document.addEventListener("keydown", (e) => {
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
-  const tag = (document.activeElement || {}).tagName || "";
-  if (/^(INPUT|TEXTAREA|SELECT)$/i.test(tag)) return;
-  const input = $("q");
-  if (e.key === "/") { e.preventDefault(); input.focus(); return; }
-  if (e.key.length === 1) input.focus();
-});
-$("search").addEventListener("submit", (e) => { e.preventDefault(); const dest = searchDestination($("q").value); if (dest) window.location.href = dest; });
-$("q").addEventListener("input", () => { const p = parseBang($("q").value); $("hint").classList.toggle("on", !!p); if (p) $("hint").textContent = "→ " + p.bang.name; });
-
-renderClock(); setInterval(renderClock, 1000); initWeather(); handleOAuthCallback(); boot();
+renderClock(); setInterval(renderClock, 1000);
+initWeather();
+handleOAuthCallback();
+boot();
 </script>
 </body>
 </html>

@@ -27,14 +27,12 @@ GET /drive/v3/files?spaces=appDataFolder&q=name='crypt-dashboard.json' and trash
 Create (first time) uses metadata `parents: ["appDataFolder"]`; subsequent saves
 `PATCH /upload/drive/v3/files/{id}?uploadType=multipart`.
 
-Restore runs the file through `migrate()` (secure) / `loadStateFromText()`
-(public) before replacing state, so older exports don't break the current shape.
+Restore runs the file through `migrate()` before replacing state, so older
+exports don't break the current shape.
 
 ## Caveats
 
 - The refresh token in `localStorage` is a long-lived credential for the
   `drive.appdata` scope only. See [SECURITY-MODEL.md](SECURITY-MODEL.md).
 - Backup is per-Google-account: a different sign-in sees a different app folder.
-- The public and secure surfaces share the same Drive file *if* you sign into the
-  same Google account on both — handy for moving config between hosts.
-- Restoring overwrites local state for the current surface.
+- Restoring overwrites the local state for this browser.

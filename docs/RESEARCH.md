@@ -10,14 +10,12 @@ What this project is assembled from, and the alternatives surveyed.
 | [leecorbin/start-page](https://github.com/leecorbin/start-page) | MIT | Single-file omnibox UX (type a URL, bang, or query) |
 | [kdippan/github-repository-analyzer](https://github.com/kdippan/github-repository-analyzer) | MIT | Client-side GitHub REST usage, optional token in `localStorage` |
 | [debba/gh-dashboard (gitdeck)](https://github.com/debba/gh-dashboard) | MIT | Repository data model — which per-repo fields/views matter |
-| [stoptalkingishh/openquiz](https://github.com/stoptalkingishh/openquiz) | AGPL-3.0-or-later | Google PKCE sign-in, Drive persistence, Gemini model-fallback pattern |
-| [stoptalkingishh/battle-rhythm](https://github.com/stoptalkingishh/battle-rhythm) | MIT | No-build Google auth + Drive approach, token-proxy ideas |
 | [amruth112/CruxNews-OpenNews](https://github.com/amruth112/CruxNews-OpenNews) | MIT | *(news, planned)* browser-side clustering + bias + CORS-proxy architecture |
 | [Greg-2600/memory-whole](https://github.com/Greg-2600/memory-whole) | MIT | *(news, planned)* TF-IDF clustering, blindspot/silence, framing divergence |
 
 Because Crypt Dashboard is itself **AGPL-3.0-or-later**, adapting patterns from
-openquiz (AGPL) and the MIT sources above is license-compatible. The projects
-below were studied for ideas only (no code reused).
+the MIT sources above is license-compatible. The projects below were studied for
+ideas only (no code reused).
 
 ## Ground-News alternatives surveyed
 

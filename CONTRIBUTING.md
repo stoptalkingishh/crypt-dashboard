@@ -9,32 +9,31 @@ that way.
   The files you edit are the files that ship.
 - **No backend.** Do not add a server, database, or server-side API. Persistence
   is `localStorage` and (optionally) the user's own Google Drive.
-- **Two surfaces must stay in sync.** `public/index.html` and `secure/index.html`
-  each contain a copy of the app engine. If you change shared behaviour, change
-  it in **both** (the only intended differences: the state default, the
-  admin-vs-settings UI, the `noindex` meta, and the secure-only homelab tiles).
+- **No personal identifiers.** Never commit GitHub usernames, emails, internal
+  IPs, or personal hostnames. The shipped defaults stay generic; personal config
+  is entered at runtime (Admin) and stored per-browser.
 - **Comments:** only where they explain *why*, not *what*.
 
 ## Before you push
 
 ```sh
-make check     # inline-script syntax, committed-secret scan, public-surface hygiene
-make serve     # click through both surfaces
+make check     # inline-script syntax, committed-secret scan, internal-host scan
+make serve     # click through the app
 ```
 
 `make check` must pass. It fails on syntax errors, committed credentials, and any
-internal hostname leaking into `public/`.
+internal/LAN hostname.
 
 ## Working on the code
 
-1. Edit `public/index.html` and `secure/index.html` (or the shell/docs).
+1. Edit `public/index.html` (or the shell/docs).
 2. Run `make check`; preview with `make serve`.
 3. Keep the diff focused; update docs and `CHANGELOG.md`.
 
-### Adding a launch category or tile
+### Adding a category or tile
 
-Edit `settings.categories` default (`defaultState()` / `publicDefault()`), or use
-the in-app Admin/Settings panel. Tiles: `{ name, url }`.
+Edit the `settings.categories` default in `defaultState()`, or use the in-app
+Admin panel. Tiles: `{ name, url }`.
 
 ### Adding a dynamic view
 
@@ -53,11 +52,11 @@ secrets to the repo; keep OAuth values as deploy-injected placeholders.
 - 2-space indent, LF, UTF-8 (see `.editorconfig`).
 - Vanilla ES2020; no frameworks.
 - Escape untrusted data with `esc()` before inserting HTML.
-- Small, single-purpose functions; keep the surface files readable.
+- Small, single-purpose functions.
 
 ## Secrets
 
 Never commit `GOOGLE_CLIENT_SECRET`, GitHub PATs, or Gemini keys. `.env` is
 git-ignored; deploy values come from repository secrets via
-`scripts/inject-env.mjs`. If you paste a value locally for testing, it goes in
-`localStorage` (Settings/Admin), not the file.
+`scripts/inject-env.mjs`. For local testing, use the in-app Admin panel (stored
+in `localStorage`), not the file.

@@ -11,8 +11,6 @@ Full license texts are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 | [leecorbin/start-page](https://github.com/leecorbin/start-page) | MIT | Single-file omnibox search-and-navigate UX |
 | [kdippan/github-repository-analyzer](https://github.com/kdippan/github-repository-analyzer) | MIT | Client-side GitHub REST usage, optional token in `localStorage`, analytics |
 | [debba/gh-dashboard ("gitdeck")](https://github.com/debba/gh-dashboard) | MIT | Repository data model and useful per-repo fields |
-| [stoptalkingishh/openquiz](https://github.com/stoptalkingishh/openquiz) | AGPL-3.0-or-later | Google PKCE sign-in, Drive persistence, Gemini model-fallback pattern |
-| [stoptalkingishh/battle-rhythm](https://github.com/stoptalkingishh/battle-rhythm) | MIT | No-build Google auth + Drive approach; token-proxy ideas |
 | [amruth112/CruxNews-OpenNews](https://github.com/amruth112/CruxNews-OpenNews) | MIT | *(news, planned)* browser-side clustering + CORS-proxy architecture |
 | [Greg-2600/memory-whole](https://github.com/Greg-2600/memory-whole) | MIT | *(news, planned)* TF-IDF clustering, blindspot/framing detection |
 

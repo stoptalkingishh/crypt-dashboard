@@ -4,15 +4,14 @@ Guidance for AI coding agents (and humans) working in this repository.
 
 ## What this is
 
-A **zero-build, client-side** personal launcher + dashboard. Two independent
-static surfaces deployed from one repo:
+A **zero-build, client-side** personal launcher + GitHub dashboard. One static
+surface (`public/index.html`) deployed to GitHub Pages. There is **no backend**
+and no build system. See `docs/ARCHITECTURE.md`.
 
-- `public/index.html` → GitHub Pages (public; no secrets, no internal hosts)
-- `secure/index.html` → Cloudflare Pages behind Cloudflare Access (homelab tiles,
-  GitHub token, full admin)
-
-Both files are self-contained single-page apps (inline CSS + JS). There is **no
-backend** and no build system. See `docs/ARCHITECTURE.md`.
+Personal data (GitHub repos, tiles, settings) is per-user: configured after
+Google sign-in and stored in the browser's `localStorage` / the user's Google
+Drive. **The shipped defaults must stay generic** — no usernames, emails,
+hostnames, or personal links.
 
 ## Hard constraints — do not violate
 
@@ -20,52 +19,41 @@ backend** and no build system. See `docs/ARCHITECTURE.md`.
    bundlers, frameworks, or CDN/`<script src>` from third parties.
 2. **No backend.** All data lives in `localStorage` or the user's Google Drive.
    Never add a server, database, or API of our own.
-3. **Keep both surfaces in sync.** Shared behaviour must be changed in *both*
-   `public/index.html` and `secure/index.html`. Intended differences only:
-   state default/key, admin vs settings UI, `noindex` meta, homelab tiles,
-   GitHub token support.
-4. **No secrets in `public/`.** Run `make check`; it enforces this.
-5. **No comments** unless explaining non-obvious *why*.
+3. **No personal identifiers in the repo.** No GitHub usernames, emails,
+   internal/LAN IPs, or personal hostnames in `public/` or anywhere tracked.
+   Run `make check`; it enforces this.
+4. **No comments** unless explaining non-obvious *why*.
 
 ## Layout
 
 ```
-public/index.html      secure/index.html      # the two apps (edit these)
-scripts/inject-env.mjs scripts/check.mjs      # tooling
-cloudflare/            # Terraform (Pages + Access)
-docs/                  # documentation (update when behaviour changes)
-.github/workflows/     # pages.yml, deploy-secure.yml
+public/index.html                          # the app (edit this)
+scripts/inject-env.mjs  scripts/check.mjs  # tooling
+docs/                                      # documentation
+.github/workflows/pages.yml                 # GitHub Pages deploy
 ```
 
 ## Verify before finishing
 
 ```sh
-make check      # must pass: syntax, secret scan, public-surface hygiene
-node scripts/check.mjs
-make serve      # http://localhost:8765/public/ and /secure/  (manual smoke test)
+make check      # must pass: syntax, secret scan, no internal hosts, noindex
+make serve      # http://localhost:8765/public/  (manual smoke test)
 ```
 
 `make check` is the narrow validation that proves the changed behaviour didn't
-break the contract (parse errors, leaked secrets, internal hosts in public).
+break the contract (parse errors, leaked secrets, personal/private hosts).
 
 ## Common tasks
 
-- **State/config shape** → `docs/CONFIGURATION.md`; defaults in
-  `defaultState()`/`publicDefault()`.
+- **State/config shape** → `docs/CONFIGURATION.md`; defaults in `defaultState()`.
 - **Auth/tokens** → `docs/GOOGLE-OAUTH.md`, `docs/SECURITY-MODEL.md`.
 - **Drive backup** → `docs/DRIVE-BACKUP.md`.
-- **News module** (unfinished) → `docs/NEWS.md` is the spec; only scaffolding
-  exists in `public/index.html`. Implement in both surfaces when building it.
-- **Deployments** → `docs/DEPLOYMENT.md`.
+- **News module** (unfinished) → `docs/NEWS.md` is the spec.
+- **Deployment** → `docs/DEPLOYMENT.md`.
 
 ## Gotchas
 
-- The 👍 state key differs by surface (`cryptdash:public:v1` vs
-  `cryptdash:state:v1`); the two origins have separate `localStorage`.
+- State key is `cryptdash:state:v1`; settings/rows live in `localStorage`.
 - `__GOOGLE_CLIENT_ID__` / `__GOOGLE_CLIENT_SECRET__` placeholders are required
   for deploy-time injection; `check.mjs` fails if they're missing.
-- Homelab hostnames belong only in `secure/index.html`.
-- Secure homelab tiles use the codename hostnames
-  (`cipher`/`cinema`/`player`/`pulse`/`oracle`/`gate`).cryptanalyst.dev. See the
-  workspace `AGENTS.md` → "Homelab service codenames"; keep in sync with
-  `homelab/cloudflare/hostnames.tsv`.
+- GitHub repos default to an **empty** user list; users add themselves in Admin.

@@ -34,7 +34,7 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      # Publishes ONLY public/. The secure/ directory is never exposed here.
+      # Publishes public/.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public

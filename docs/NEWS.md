@@ -1,10 +1,8 @@
 # News & media bias (planned)
 
 A Ground-News-style reader that clusters the same story across outlets and shows
-balance. **Status: specified, partially scaffolded.** `public/index.html` already
-has the `News` tab, its CSS, the `#view-news` section, and `settings.news`
-defaults; the engine and the entire secure-side port are **not yet implemented**.
-This document is the build spec.
+balance. **Status: specified, not yet implemented.** This document is the build
+spec.
 
 Design is adapted from `amruth112/CruxNews-OpenNews` and `Greg-2600/memory-whole`
 (both MIT) — see [RESEARCH.md](RESEARCH.md).

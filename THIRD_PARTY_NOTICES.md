@@ -8,8 +8,6 @@ and their licenses.
 
 | Project | License | What we adapted |
 |---|---|---|
-| [stoptalkingishh/openquiz](https://github.com/stoptalkingishh/openquiz) | AGPL-3.0-or-later | Google Authorization Code + PKCE sign-in, Drive persistence, Gemini model-fallback pattern |
-| [stoptalkingishh/battle-rhythm](https://github.com/stoptalkingishh/battle-rhythm) | MIT | No-build Google auth + Drive approach; token-proxy ideas |
 | [8tp/startpage](https://github.com/8tp/startpage) | MIT | Zero-build launcher: config-driven groups, `!bang` parser, Open-Meteo weather, theme |
 | [leecorbin/start-page](https://github.com/leecorbin/start-page) | MIT | Single-file omnibox behaviour |
 | [kdippan/github-repository-analyzer](https://github.com/kdippan/github-repository-analyzer) | MIT | Client-side GitHub REST usage, optional token in `localStorage` |

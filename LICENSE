@@ -673,14 +673,9 @@ The copyright holders may offer separate commercial terms for people who need
 an alternative to the AGPL. Those terms, if offered, are optional and do not
 restrict the AGPL grant above.
 
-To ask whether alternative terms are available, open an issue in the GitHub
-repository:
-
-https://github.com/stoptalkingishh/crypt-dashboard/issues
-
 Third-party components adapted in this repository are attributed, with their
 licenses, in THIRD_PARTY_NOTICES.md.
 
 ---
 
-Copyright (C) 2026 Ismael Rodriguez (stoptalkingishh)
+Copyright (C) 2026 Crypt Dashboard contributors

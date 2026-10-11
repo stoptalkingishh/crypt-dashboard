@@ -6,19 +6,17 @@ All notable changes are documented here. Format loosely follows
 
 ## [Unreleased]
 
-### Added
-- `cloudflare/setup.sh` + `cloudflare/.env.example` — idempotent API-based
-  provisioning of the secure surface (Pages project, custom domain, DNS, Access
-  app/policy).
-- News & media-bias module **scaffolding** on the public surface only (tab, CSS,
-  `settings.news` defaults). Engine not yet implemented — see docs/NEWS.md.
-- `scripts/check.mjs` and `make check` (syntax, secret, hygiene checks).
-- Repo documentation set under `docs/`.
+### Changed
+- **Collapsed to a single GitHub Pages surface.** Removed the Cloudflare Pages /
+  Access deploy, the `secure/` surface, and the `cloudflare/` Terraform/scripts.
+  The app is now one generic, client-side page; personal data is per-user.
+- **Sanitised the repo.** Removed all personal identifiers (GitHub username,
+  email, homelab hostnames, LAN IP) from code, defaults, and docs. Shipped
+  defaults are generic; personal config is entered in Admin at runtime.
 
-### Deployed
-- Public launcher on GitHub Pages (`stoptalkingishh.github.io/crypt-dashboard/`).
-- Secure dashboard on Cloudflare Pages (`home.cryptanalyst.dev`) behind Cloudflare
-  Access (email allow-list).
+### Added
+- `scripts/check.mjs` and `make check` (syntax, secret, and private-host checks).
+- Repo documentation set under `docs/`.
 
 ## [0.1.0]
 
@@ -29,8 +27,6 @@ All notable changes are documented here. Format loosely follows
 - Google sign-in (Authorization Code + PKCE, client-side) with profile.
 - Google Drive backup/restore to `appDataFolder` (manual + auto).
 - Gemini "Ask Gemini" panel (bring-your-own key, model fallback).
-- Admin panel (secure) / settings sheet (public); export/import JSON.
-- Two deploy targets from one repo: GitHub Pages (`public/`) and Cloudflare
-  Pages (`secure/`) gated by Cloudflare Access.
-- Cloudflare Terraform (Pages project/domain + Access application/policy).
+- Admin panel; export/import JSON.
+- GitHub Pages deploy workflow.
 - Docs, AGPL-3.0-or-later license, attribution.

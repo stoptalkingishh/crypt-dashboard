@@ -3,10 +3,10 @@
  * Repo checks for crypt-dashboard.
  *
  *   - every inline <script> parses (node --check)
- *   - deploy placeholders are present in both surfaces
+ *   - deploy placeholders are present
  *   - no real secrets are committed anywhere in the repo
- *   - the public surface leaks no internal/homelab hostnames
- *   - the secure surface is marked noindex
+ *   - the surface leaks no internal/private hostnames
+ *   - the surface is marked noindex
  *
  * Run with `make check` or `node scripts/check.mjs`. Exits non-zero on failure.
  */
@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
 const ROOT = process.cwd();
-const SURFACES = ["public/index.html", "secure/index.html"];
+const SURFACES = ["public/index.html"];
 const SKIP_DIRS = new Set([".git", "node_modules", ".wrangler", ".terraform", "dist"]);
 let failures = 0;
 const fail = (m) => { console.error(`\x1b[31m✗ ${m}\x1b[0m`); failures += 1; };
@@ -43,7 +43,7 @@ function walk(dir, out = []) {
   return out;
 }
 
-// --- 1. inline script syntax (both surfaces) ---
+// --- 1. inline script syntax ---
 const dir = mkdtempSync(join(tmpdir(), "cd-check-"));
 for (const file of SURFACES) {
   let html;
@@ -78,15 +78,14 @@ if (!hits) ok(`no secrets in ${scanned} text file(s)`);
 
 // --- 3. public surface must not expose internal hostnames ---
 const pub = readFileSync("public/index.html", "utf8");
-const INTERNAL = [/192\.168\.\d+\.\d+/, /\b10\.\d+\.\d+\.\d+\b/, /172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/, /attlocal\.net/, /jellyfin\.home/];
+const INTERNAL = [/192\.168\.\d+\.\d+/, /\b10\.\d+\.\d+\.\d+\b/, /172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/];
 let leaked = false;
 for (const re of INTERNAL) if (re.test(pub)) { fail(`public/index.html: leaks internal host matching ${re}`); leaked = true; }
 if (!leaked) ok("public surface: no internal hostnames");
 
-// --- 4. secure surface hygiene ---
-const sec = readFileSync("secure/index.html", "utf8");
-if (!/name="robots"[^>]*noindex/i.test(sec)) fail("secure/index.html: missing robots noindex");
-else ok("secure surface: noindex present");
+// --- 4. surface hygiene ---
+if (!/name="robots"[^>]*noindex/i.test(pub)) fail("public/index.html: missing robots noindex");
+else ok("public surface: noindex present");
 
 console.log(failures ? `\n\x1b[31m${failures} check(s) failed\x1b[0m` : "\n\x1b[32mall checks passed\x1b[0m");
 process.exit(failures ? 1 : 0);

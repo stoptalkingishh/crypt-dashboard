@@ -1,8 +1,7 @@
 # Google sign-in (OAuth 2.0 + PKCE)
 
-Sign-in is **client-side Authorization Code + PKCE** — no backend. It is adapted
-from the author's `openquiz` project. The redirect returns to the page itself, so
-the redirect URI is simply the page URL.
+Sign-in is **client-side Authorization Code + PKCE** — no backend. The redirect
+returns to the page itself, so the redirect URI is simply the page URL.
 
 Scopes requested:
 
@@ -19,15 +18,14 @@ https://www.googleapis.com/auth/drive.appdata   # backup to a hidden app folder
 3. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type
    **Web application**.
 4. Under **Authorized JavaScript origins** and **Authorized redirect URIs**, add
-   both surfaces (no trailing path variations — match exactly):
+   the page URL (no trailing path variations — match exactly):
 
    ```
-   https://cryptanalyst.dev/
-   https://home.cryptanalyst.dev/
-   https://stoptalkingishh.github.io/crypt-dashboard/   # if you use the github.io URL
+   https://your-username.github.io/crypt-dashboard/
    ```
 
-   The redirect URI is `location.origin + location.pathname` at sign-in time.
+   If you attach a custom domain, add that too. The redirect URI is
+   `location.origin + location.pathname` at sign-in time.
 5. Copy the **Client ID** and **Client secret**.
 
 ## Where the values go
@@ -42,7 +40,7 @@ https://www.googleapis.com/auth/drive.appdata   # backup to a hidden app folder
 Google's discovery document advertises only `client_secret_post` /
 `client_secret_basic`, so **Google rejects a secret-less token exchange even with
 PKCE** (unlike Auth0/Okta). The client secret therefore ships in the client
-bundle, exactly as in `openquiz`.
+bundle.
 
 What this means:
 

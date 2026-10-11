@@ -2,40 +2,31 @@
 
 ## Done
 
-- [x] Public launcher deployed on GitHub Pages
-- [x] Secure dashboard deployed on Cloudflare Pages (`home.cryptanalyst.dev`) behind Access
-- [x] Two static surfaces (`public/`, `secure/`) deployed from one repo
+- [x] Single static surface (`public/`) deployed to GitHub Pages
 - [x] Launcher: clock, bang search, keyless weather, categorized tiles, drag-reorder, theme
 - [x] GitHub repo dashboard (public + token-authenticated) with detail modal
-- [x] Admin panel (secure) / settings sheet (public), export/import JSON
+- [x] Admin panel + export/import JSON
 - [x] Google sign-in (Authorization Code + PKCE, client-side)
 - [x] Drive backup/restore to `appDataFolder`
 - [x] Gemini panel (bring-your-own key)
-- [x] Deploy workflows (GitHub Pages + Cloudflare Pages) + Terraform + Access
+- [x] Deploy workflow (GitHub Pages)
 - [x] Docs, checks (`make check`), attribution
 
 ## Next
 
-- [ ] **News & media-bias module** — implement the engine on both surfaces
-      (spec in [NEWS.md](NEWS.md)): RSS proxy, TF-IDF clustering, bias bar,
-      blindspot, framing divergence, Gemini briefings. *Scaffolding exists on the
-      public surface only.*
+- [ ] **News & media-bias module** — implement per [NEWS.md](NEWS.md): RSS proxy,
+      TF-IDF clustering, bias bar, blindspot, framing divergence, Gemini briefings.
 - [ ] Google OAuth: create the client, set repo secrets
-      `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, add redirect URIs
-      (`https://cryptanalyst.dev/`, `https://home.cryptanalyst.dev/`).
-- [ ] CI secrets for the secure deploy: `CLOUDFLARE_API_TOKEN`,
-      `CLOUDFLARE_ACCOUNT_ID`.
-- [ ] Attach the `cryptanalyst.dev` custom domain to the GitHub Pages site.
+      `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, add the redirect URI.
 - [ ] Publish the Google consent screen (avoids 7-day refresh-token expiry).
 
 ## Later / ideas
 
-- [ ] Optional own Cloudflare Worker proxy for private news fetching
+- [ ] Optional own proxy for private news fetching
 - [ ] RSS/search for the launcher itself
 - [ ] PWA (installable, offline launcher)
 - [ ] Import browser bookmarks → tiles
 - [ ] WASM embeddings for higher-quality clustering (heavy download; opt-in)
-- [ ] Service-status pings for homelab tiles
 
 ## Explicitly not doing
 

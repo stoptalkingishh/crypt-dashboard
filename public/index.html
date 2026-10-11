@@ -96,6 +96,22 @@
   .usership .unm { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .greet { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
   .ai-out { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; white-space: pre-wrap; font-size: 12.5px; color: var(--text); max-height: 340px; overflow: auto; }
+  .scan-cam { position: relative; background: #000; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 3; display: grid; place-items: center; }
+  .scan-cam video { width: 100%; height: 100%; object-fit: cover; }
+  .scan-cam .scan-hint { position: absolute; inset: auto 0 12px; text-align: center; color: #fff; font-size: 12px; text-shadow: 0 1px 3px #000; }
+  .scan-cam .scan-idle { color: var(--faint); font-size: 12.5px; }
+  .scan-result { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; gap: 16px; }
+  .scan-result .poster { width: 92px; height: 138px; border-radius: 8px; object-fit: cover; background: var(--panel-2); flex: 0 0 auto; }
+  .scan-result .info { flex: 1; min-width: 0; }
+  .scan-result h3 { margin: 0 0 4px; font-size: 16px; }
+  .verdict { display: inline-block; font-size: 11.5px; font-weight: 600; border-radius: 6px; padding: 2px 9px; margin-bottom: 8px; }
+  .verdict.owned { background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--accent); }
+  .verdict.physical { background: color-mix(in srgb, var(--accent-2) 22%, transparent); color: var(--accent-2); }
+  .verdict.diff { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
+  .verdict.none { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
+  .scan-meta { color: var(--muted); font-size: 12.5px; }
+  .scan-recent { display: flex; flex-direction: column; gap: 6px; }
+  .scan-recent .srow { font-size: 12.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
 
   /* ---------- hero ---------- */
   .hero { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
@@ -281,6 +297,7 @@
 
   <section id="view-launcher"><div class="grid" id="grid"></div></section>
   <section id="view-repos" hidden></section>
+  <section id="view-scan" hidden></section>
 
   <footer>
     <span id="foot-status">local-only &middot; data in localStorage &middot; optional Google Drive backup</span>
@@ -358,7 +375,10 @@ function defaultState() {
       search: { name: "Google", url: "https://www.google.com/search?q={q}" },
       weather: { latitude: null, longitude: null, unit: "fahrenheit", label: "" },
       github: { users: [], token: "", sort: "updated", hideForks: false, liveRepos: true },
+      collection: { proxy: "https://api.allorigins.win/raw?url={url}", tmdbKey: "" },
     },
+    library: { generatedAt: null, server: "", count: 0, items: [] },
+    physical: [],
     categories: [
       { id: "home", name: "Home", type: "links", tiles: [
         { name: "GitHub", url: "https://github.com" },
@@ -367,6 +387,7 @@ function defaultState() {
         { name: "MDN", url: "https://developer.mozilla.org" },
       ] },
       { id: "repos", name: "Repos", type: "github", tiles: [] },
+      { id: "scan", name: "Scan", type: "scan", tiles: [] },
       { id: "dev", name: "Dev", type: "links", tiles: [
         { name: "GitHub", url: "https://github.com" },
         { name: "Stack Overflow", url: "https://stackoverflow.com" },
@@ -408,6 +429,9 @@ function migrate(s) {
   s.settings.search = Object.assign({}, def.settings.search, s.settings.search || {});
   s.settings.weather = Object.assign({}, def.settings.weather, s.settings.weather || {});
   s.settings.github = Object.assign({}, def.settings.github, s.settings.github || {});
+  s.settings.collection = Object.assign({}, def.settings.collection, s.settings.collection || {});
+  if (!s.library || !Array.isArray(s.library.items)) s.library = def.library;
+  if (!Array.isArray(s.physical)) s.physical = [];
   if (!Array.isArray(s.categories) || !s.categories.length) s.categories = def.categories;
   s.categories.forEach(c => { if (!Array.isArray(c.tiles)) c.tiles = []; });
   return s;
@@ -777,12 +801,17 @@ function closeOverlay() { const o = $("overlay"); o.hidden = true; o.innerHTML =
 function renderView() {
   const cat = currentCategory();
   const isGh = cat && cat.type === "github";
-  $("view-launcher").hidden = !!isGh;
+  const isScan = cat && cat.type === "scan";
+  $("view-launcher").hidden = !!(isGh || isScan);
   $("view-repos").hidden = !isGh;
+  $("view-scan").hidden = !isScan;
   if (isGh) {
     if (!repoData && !repoLoading) { fetchRepos(false); }
     renderRepos();
     $("foot-status").textContent = "github api · cached 10m · " + ((state.settings.github.users || []).join(", ") || "no user set");
+  } else if (isScan) {
+    renderScan();
+    $("foot-status").textContent = "collection · " + ((state.library.items || []).length) + " on server · " + (state.physical || []).length + " physical";
   } else {
     renderGrid();
     $("foot-status").textContent = "links & repos · data in localStorage";
@@ -1019,6 +1048,170 @@ function openAi() {
   $("ai-cfg").addEventListener("click", hsOpenSettings);
 }
 
+/* ============================================================================
+   Collection / barcode scanner (client-side).
+   UPC -> UPCitemdb (via the configurable proxy; it blocks browser origins) ->
+   title -> TMDB metadata -> check against the Jellyfin snapshot (state.library)
+   and the physical list (state.physical). Pattern studied from the MIT projects
+   BOCollections and Armarium.
+   ========================================================================== */
+const COLLECTION_PROXY_DEFAULT = "https://api.allorigins.win/raw?url={url}";
+
+const TITLE_STOP = new Set("the a an of and blu ray bluray dvd 4k uhd hd digital vhs laserdisc steelbook edition unrated extended remastered widescreen fullscreen special collector box set".split(" "));
+function normalizeTitle(s) {
+  return String(s || "").toLowerCase()
+    .replace(/\([^)]*\)/g, " ").replace(/\[[^\]]*\]/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
+    .filter(w => w && !TITLE_STOP.has(w)).join(" ").trim();
+}
+function titleTokens(s) { return new Set(normalizeTitle(s).split(" ").filter(w => w.length > 2)); }
+function jaccard(a, b) { const A = titleTokens(a), B = titleTokens(b); if (!A.size || !B.size) return 0; let i = 0; A.forEach(x => { if (B.has(x)) i++; }); return i / (A.size + B.size - i); }
+
+function matchLibrary(title, year) {
+  const items = (state.library && state.library.items) || [];
+  const nt = normalizeTitle(title);
+  let best = null, bestScore = 0, exact = false;
+  for (const it of items) {
+    if (normalizeTitle(it.name) === nt) { exact = true; if (bestScore < 1) { best = it; bestScore = 1; } }
+    const j = jaccard(it.name, title);
+    if (j > bestScore) { bestScore = j; best = it; }
+  }
+  if (bestScore < 0.6 || !best) return { item: null, score: bestScore, exact: false };
+  const yearMismatch = !!(year && best.year && Math.abs(best.year - year) > 1);
+  return { item: best, score: bestScore, exact: exact && !yearMismatch, yearMismatch };
+}
+function matchPhysical(title) {
+  const list = state.physical || []; const nt = normalizeTitle(title);
+  let best = null, bs = 0;
+  for (const e of list) { if (normalizeTitle(e.title) === nt) return e; const j = jaccard(e.title, title); if (j > bs) { bs = j; best = e; } }
+  return bs >= 0.6 ? best : null;
+}
+function collectionProxy() { return (state.settings.collection && state.settings.collection.proxy) || COLLECTION_PROXY_DEFAULT; }
+
+async function upcLookup(upc) {
+  const target = "https://api.upcitemdb.com/prod/trial/lookup?upc=" + encodeURIComponent(upc);
+  const proxy = collectionProxy();
+  const url = proxy.includes("{url}") ? proxy.replace("{url}", encodeURIComponent(target)) : proxy + encodeURIComponent(target);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("UPC lookup failed (" + res.status + ")");
+  const data = await res.json();
+  const item = (data.items || [])[0];
+  return item ? { title: item.title, brand: item.brand || "", category: item.category || "" } : null;
+}
+async function tmdbSearch(title, year) {
+  const key = (state.settings.collection && state.settings.collection.tmdbKey) || "";
+  if (!key) return null;
+  const p = new URLSearchParams({ query: title, api_key: key });
+  if (year) p.set("year", String(year));
+  const res = await fetch("https://api.themoviedb.org/3/search/movie?" + p.toString());
+  if (!res.ok) return null;
+  const m = ((await res.json()).results || [])[0];
+  if (!m) return null;
+  return { title: m.title, year: (m.release_date || "").slice(0, 4), overview: m.overview || "", poster: m.poster_path ? "https://image.tmdb.org/t/p/w200" + m.poster_path : "", tmdbId: m.id };
+}
+
+let scanStream = null, scanDetector = null, scanTimer = null, lastScan = null;
+
+async function startScan() {
+  const video = $("scan-video"); if (!video) return;
+  if (!("BarcodeDetector" in window)) { toast("No BarcodeDetector in this browser — type the UPC instead"); return; }
+  try {
+    scanDetector = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    video.srcObject = scanStream; await video.play();
+    $("scan-idle").hidden = true;
+    scanTimer = setInterval(async () => {
+      try { const codes = await scanDetector.detect(video); if (codes && codes.length) { const v = codes[0].rawValue; stopScan(); handleUpc(v); } } catch {}
+    }, 350);
+  } catch (e) { toast("Camera unavailable: " + e.message); }
+}
+function stopScan() {
+  clearInterval(scanTimer); scanTimer = null;
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  const video = $("scan-video"); if (video) video.srcObject = null;
+  const idle = $("scan-idle"); if (idle) idle.hidden = false;
+}
+async function handleUpc(upc) {
+  upc = String(upc || "").replace(/\D/g, "");
+  if (!upc) return;
+  const res = $("scan-result");
+  res.innerHTML = '<div class="scan-meta"><span class="spinner"></span> looking up ' + esc(upc) + "…</div>";
+  try {
+    const prod = await upcLookup(upc);
+    if (!prod) { res.innerHTML = '<div class="scan-result"><div class="info"><span class="verdict none">NOT FOUND</span><h3>No product for ' + esc(upc) + '</h3><p class="scan-meta">UPCitemdb has no record (common for very new releases).</p></div></div>'; return; }
+    const tmdb = await tmdbSearch(prod.title);
+    const title = (tmdb && tmdb.title) || prod.title;
+    const year = tmdb ? (parseInt(tmdb.year, 10) || null) : null;
+    const lib = matchLibrary(title, year);
+    const phys = matchPhysical(title);
+    let verdict, vclass;
+    if (lib.item && lib.exact) { verdict = "OWNED · server"; vclass = "owned"; }
+    else if (lib.item) { verdict = "OWNED · server (check edition)"; vclass = "diff"; }
+    else if (phys) { verdict = "OWNED · physical"; vclass = "physical"; }
+    else { verdict = "NOT OWNED"; vclass = "none"; }
+    lastScan = { upc, title, year, verdict };
+    const poster = (tmdb && tmdb.poster) ? '<img class="poster" src="' + esc(tmdb.poster) + '" alt="">' : '<div class="poster"></div>';
+    const sub = [prod.brand, prod.category].filter(Boolean).join(" · ");
+    res.innerHTML = '<div class="scan-result">' + poster + '<div class="info">' +
+      '<span class="verdict ' + vclass + '">' + esc(verdict) + "</span>" +
+      "<h3>" + esc(title) + (year ? " (" + year + ")" : "") + "</h3>" +
+      (sub ? '<p class="scan-meta">' + esc(sub) + "</p>" : "") +
+      (tmdb && tmdb.overview ? '<p class="scan-meta">' + esc(tmdb.overview.slice(0, 220)) + "</p>" : "") +
+      '<p class="scan-meta">UPC ' + esc(upc) + (lib.item ? " · server: " + esc(lib.item.name) : "") + (phys ? " · physical: " + esc(phys.title) : "") + "</p>" +
+      '<div class="row" style="margin-top:10px"><button class="btn" id="scan-add-phys">&#43; add to physical</button></div>' +
+      "</div></div>";
+    const add = $("scan-add-phys"); if (add) add.addEventListener("click", () => addPhysical({ title, upc, year }));
+  } catch (e) {
+    res.innerHTML = '<div class="scan-result"><div class="info"><span class="verdict none">ERROR</span><h3>Lookup failed</h3><p class="scan-meta">' + esc(e.message) + "</p></div></div>";
+  }
+}
+function addPhysical(entry) {
+  state.physical = state.physical || [];
+  if (state.physical.some(e => e.upc === entry.upc)) { toast("Already in physical collection"); return; }
+  state.physical.push(Object.assign({ addedAt: new Date().toISOString() }, entry));
+  saveState(); toast("Added to physical collection"); renderScan();
+}
+function renderScan() {
+  const root = $("view-scan");
+  const lib = state.library || { items: [] };
+  const phys = state.physical || [];
+  root.innerHTML =
+    '<div class="repobar"><span>' + (lib.items || []).length + " on server</span><span class=\"dot\">&middot;</span><span>" + phys.length + " physical</span>" +
+    (lib.generatedAt ? '<span class="dot">&middot;</span><span>snapshot ' + esc(timeAgo(lib.generatedAt)) + "</span>" : '<span class="dot">&middot;</span><span>no server snapshot imported</span>') +
+    '<span style="flex:1"></span><button class="btn" id="scan-start">&#128247; scan barcode</button><button class="btn" id="scan-stop">stop</button></div>' +
+    '<div class="scan-cam"><video id="scan-video" playsinline muted></video><div class="scan-idle" id="scan-idle">camera off — press “scan barcode”, or type a UPC below</div><div class="scan-hint">point at the barcode on the case</div></div>' +
+    '<div class="row" style="margin-top:12px"><input id="scan-upc" placeholder="or type a UPC / EAN" style="flex:1"><button class="btn primary" id="scan-go">check</button></div>' +
+    '<div id="scan-result" style="margin-top:14px"></div>' +
+    (phys.length ? '<p class="hint-text" style="margin-top:16px">physical collection</p><div class="scan-recent">' + phys.slice(-8).reverse().map(e => '<div class="srow"><span class="chip">' + esc(e.title) + '</span><span>' + esc(e.upc || "") + "</span></div>").join("") + "</div>" : "");
+  $("scan-start").addEventListener("click", startScan);
+  $("scan-stop").addEventListener("click", stopScan);
+  $("scan-go").addEventListener("click", () => handleUpc($("scan-upc").value));
+  $("scan-upc").addEventListener("keydown", (e) => { if (e.key === "Enter") handleUpc($("scan-upc").value); });
+}
+function importLibrary(file) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const data = JSON.parse(rd.result);
+      const items = Array.isArray(data) ? data : (data.items || []);
+      if (!items.length) throw new Error("no items");
+      state.library = { generatedAt: data.generatedAt || new Date().toISOString(), server: data.server || "", count: items.length, items };
+      saveState(); renderScan(); toast("Imported " + items.length + " items");
+    } catch { toast("Invalid library file"); }
+  };
+  rd.readAsText(file);
+}
+function exportLibrary(format) {
+  const lib = state.library || { items: [] };
+  let text, name, mime;
+  if (format === "csv") {
+    const rows = [["name", "type", "year", "tmdbId", "imdbId"]].concat((lib.items || []).map(i => [i.name, i.type, i.year || "", i.tmdbId || "", i.imdbId || ""]));
+    text = rows.map(r => r.map(c => '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"').join(",")).join("\n");
+    name = "library.csv"; mime = "text/csv";
+  } else { text = JSON.stringify(lib, null, 2); name = "library.json"; mime = "application/json"; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: mime })); a.download = name; a.click();
+}
+
 /* ---------- admin panel ---------- */
 function openAdmin(section) {
   const overlay = $("overlay");
@@ -1076,6 +1269,14 @@ function renderAdmin(section) {
         '<div class="row"><button class="btn" id="btn-ghclear">clear repo cache</button><button class="btn" id="btn-ghrefresh">refresh now</button></div>' +
       "</fieldset>" +
 
+      '<fieldset class="fieldset"><legend id="collection-fs">collection &amp; scanner</legend>' +
+        '<div class="row"><label>upc proxy</label><input id="set-collproxy" value="' + esc((s.collection && s.collection.proxy) || "") + '"></div>' +
+        '<div class="row"><label>tmdb key</label><input id="set-tmdbkey" type="password" value="' + esc((s.collection && s.collection.tmdbKey) || "") + '" placeholder="optional — posters &amp; metadata"></div>' +
+        '<p class="hint-text">UPCitemdb is called through the proxy (it blocks browser origins). TMDB is called directly. Keys stay in this browser.</p>' +
+        '<div class="row"><button class="btn" id="btn-lib-import">import library.json</button><input type="file" id="lib-file" accept="application/json" hidden><button class="btn" id="btn-lib-export">export json</button><button class="btn" id="btn-lib-csv">export csv</button><button class="btn danger" id="btn-lib-clear">clear library</button></div>' +
+        '<div class="row"><span class="hint-text">' + ((state.library.items || []).length) + " server items · " + ((state.physical || []).length) + " physical</span></div>" +
+      "</fieldset>" +
+
       '<fieldset class="fieldset"><legend id="ai-fs">account &amp; gemini</legend>' +
         '<div class="row"><label>account</label>' + (loadAuth() && loadAuth().profile ? '<span class="hint-text" style="flex:1">' + esc(loadAuth().profile.email) + '</span><button class="btn" id="acct-backup2">back up</button><button class="btn" id="acct-restore2">restore</button><button class="btn" id="btn-gout">sign out</button>' : '<button class="btn" id="btn-gin">sign in with google</button>') + '</div>' +
         '<div class="row"><label>google id</label><input id="set-gid" value="' + esc(gc().clientId) + '" placeholder="…apps.googleusercontent.com"></div>' +
@@ -1099,6 +1300,7 @@ function renderAdmin(section) {
 
   // section highlight scroll
   if (section === "github") setTimeout(() => { const el = $("gh-fs"); el && el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 30);
+  if (section === "collection") setTimeout(() => { const el = $("collection-fs"); el && el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 30);
   if (section === "ai") setTimeout(() => { const el = $("ai-fs"); el && el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 30);
 
   wireAdmin();
@@ -1119,6 +1321,11 @@ function wireAdmin() {
   $("btn-wxclear").addEventListener("click", () => { $("set-lat").value = ""; $("set-lon").value = ""; });
   $("btn-ghclear").addEventListener("click", () => { localStorage.removeItem(GH_CACHE_KEY); toast("Repo cache cleared"); });
   $("btn-ghrefresh").addEventListener("click", () => { collectAdmin(); saveState(); closeOverlay(); fetchRepos(true); });
+  const li = $("btn-lib-import"); if (li) li.addEventListener("click", () => $("lib-file").click());
+  const lf = $("lib-file"); if (lf) lf.addEventListener("change", (e) => { const f = e.target.files[0]; if (f) importLibrary(f); });
+  const le = $("btn-lib-export"); if (le) le.addEventListener("click", () => exportLibrary("json"));
+  const lc = $("btn-lib-csv"); if (lc) lc.addEventListener("click", () => exportLibrary("csv"));
+  const lx = $("btn-lib-clear"); if (lx) lx.addEventListener("click", () => { if (confirm("Clear the imported server library?")) { state.library = { generatedAt: null, server: "", count: 0, items: [] }; saveState(); renderAdmin(); } });
   const gin = $("btn-gin"); if (gin) gin.addEventListener("click", signInWithGoogle);
   const gout = $("btn-gout"); if (gout) gout.addEventListener("click", signOutGoogle);
   const bk2 = $("acct-backup2"); if (bk2) bk2.addEventListener("click", () => backupToDrive());
@@ -1177,6 +1384,9 @@ function collectAdmin() {
   s.weather.label = val("set-wxlabel") ?? "";
   s.github.users = (val("set-ghusers") || "").split(",").map(x => x.trim()).filter(Boolean);
   s.github.token = val("set-ghtoken") ?? s.github.token;
+  if (!s.collection) s.collection = { proxy: "", tmdbKey: "" };
+  s.collection.proxy = val("set-collproxy") ?? s.collection.proxy;
+  s.collection.tmdbKey = val("set-tmdbkey") ?? s.collection.tmdbKey;
   setEnvOverride({ googleClientId: val("set-gid") || "", googleClientSecret: val("set-gsec") || "" });
   saveAi({ model: val("set-gmodel") || GEMINI_MODELS[0], apiKey: val("set-gkey") || "" });
   // categories / tiles

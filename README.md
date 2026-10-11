@@ -20,8 +20,11 @@ The shipped defaults are generic.
 - **Drive backup** — save/restore your configuration to a hidden app folder in
   *your own* Google Drive (`drive.appdata`).
 - **Gemini** — an "Ask Gemini" panel using your own API key (bring-your-own).
-- **Admin panel** — edit categories & tiles, weather, GitHub, backup, and
-  export/import as JSON.
+- **Collection scanner** — scan a store barcode (or type a UPC), and get
+  `OWNED · server` / `OWNED · physical` / `NOT OWNED` against a Jellyfin library
+  snapshot plus your physical list. Import/export the inventory as JSON/CSV.
+- **Admin panel** — edit categories & tiles, weather, GitHub, collection,
+  backup, and export/import as JSON.
 
 ## Quick start (local)
 
@@ -43,8 +46,9 @@ crypt-dashboard/
 │  ├─ index.html
 │  └─ .nojekyll
 ├─ scripts/
-│  ├─ inject-env.mjs  # bakes OAuth client id/secret at deploy time
-│  └─ check.mjs       # repo checks (make check)
+│  ├─ inject-env.mjs             # bakes OAuth client id/secret at deploy time
+│  ├─ check.mjs                  # repo checks (make check)
+│  └─ jellyfin-inventory.mjs     # Jellyfin library -> library.json snapshot
 ├─ docs/              # detailed documentation
 └─ .github/workflows/
    └─ pages.yml         # public/  -> GitHub Pages
@@ -60,6 +64,7 @@ crypt-dashboard/
 | [GOOGLE-OAUTH.md](docs/GOOGLE-OAUTH.md) | Google Cloud setup, scopes, PKCE, caveats |
 | [DRIVE-BACKUP.md](docs/DRIVE-BACKUP.md) | How backup/restore works |
 | [GEMINI.md](docs/GEMINI.md) | Bring-your-own-key Gemini integration |
+| [COLLECTION.md](docs/COLLECTION.md) | Jellyfin snapshot + barcode scanner |
 | [NEWS.md](docs/NEWS.md) | Planned news + media-bias module (spec) |
 | [SECURITY-MODEL.md](docs/SECURITY-MODEL.md) | Threat model and guarantees |
 | [ROADMAP.md](docs/ROADMAP.md) | What's done / next |

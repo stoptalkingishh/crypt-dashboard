@@ -11,6 +11,8 @@
 - [x] Gemini panel (bring-your-own key)
 - [x] Deploy workflow (GitHub Pages)
 - [x] Docs, checks (`make check`), attribution
+- [x] Collection: Jellyfin snapshot import + barcode/UPC ownership check
+      ([COLLECTION.md](COLLECTION.md))
 
 ## Next
 
@@ -19,6 +21,9 @@
 - [ ] Google OAuth: create the client, set repo secrets
       `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, add the redirect URI.
 - [ ] Publish the Google consent screen (avoids 7-day refresh-token expiry).
+- [ ] Scanner: iOS barcode support (JS decoder fallback; `BarcodeDetector` is
+      Chrome/Android only) and a second UPC provider for missing records.
+- [ ] Scanner: optional live Jellyfin query (currently snapshot-only).
 
 ## Later / ideas
 

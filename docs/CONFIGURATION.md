@@ -14,11 +14,15 @@ to Google Drive. The built-in defaults live in `defaultState()`.
     "hour12": true,
     "search":  { "name": "Google", "url": "https://www.google.com/search?q={q}" },
     "weather": { "latitude": null, "longitude": null, "unit": "fahrenheit", "label": "" },
-    "github":  { "users": [], "token": "", "sort": "updated", "hideForks": false, "liveRepos": true }
+    "github":  { "users": [], "token": "", "sort": "updated", "hideForks": false, "liveRepos": true },
+    "collection": { "proxy": "https://api.allorigins.win/raw?url={url}", "tmdbKey": "" }
   },
+  "library":  { "generatedAt": null, "server": "", "count": 0, "items": [] },
+  "physical": [],
   "categories": [
     { "id": "home", "name": "Home", "type": "links",  "tiles": [ { "name": "GitHub", "url": "https://github.com" } ] },
-    { "id": "repos","name": "Repos","type": "github", "tiles": [] }
+    { "id": "repos","name": "Repos","type": "github", "tiles": [] },
+    { "id": "scan", "name": "Scan", "type": "scan",   "tiles": [] }
   ]
 }
 ```
@@ -26,6 +30,11 @@ to Google Drive. The built-in defaults live in `defaultState()`.
 - `settings.github.users` is an **array** of accounts (multiple supported);
   `settings.github.token` holds an optional GitHub PAT for private repos
   (see [SECURITY-MODEL.md](SECURITY-MODEL.md)).
+- `settings.collection` drives the scanner ([COLLECTION.md](COLLECTION.md)):
+  `proxy` wraps barcode lookups (UPCitemdb blocks browser origins) and
+  `tmdbKey` is an optional TMDB key for posters/metadata.
+- `library` is the imported Jellyfin snapshot; `physical` is the user's own
+  list of owned discs. Both are managed from Admin → collection & scanner.
 - The defaults are **generic** — no usernames, emails, or hostnames. Personal
   config is entered in Admin and stored per-browser.
 - News settings are **planned** (see [NEWS.md](NEWS.md)); not yet in the schema.

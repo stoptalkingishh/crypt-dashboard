@@ -15,6 +15,14 @@ All notable changes are documented here. Format loosely follows
   defaults are generic; personal config is entered in Admin at runtime.
 
 ### Added
+- **Collection & barcode scanner** — a `scan` view that looks a scanned/typed
+  UPC up (UPCitemdb through a configurable proxy, TMDB metadata optional) and
+  reports `OWNED · server`, `OWNED · physical`, or `NOT OWNED` against a
+  Jellyfin snapshot and the user's physical list. Camera scanning via
+  `BarcodeDetector`, manual UPC fallback, physical-list add, JSON/CSV export,
+  and `collection & scanner` settings in Admin.
+- `scripts/jellyfin-inventory.mjs` (`make inventory`) — exports a Jellyfin
+  library to a `library.json` snapshot for import.
 - `scripts/check.mjs` and `make check` (syntax, secret, and private-host checks).
 - Repo documentation set under `docs/`.
 

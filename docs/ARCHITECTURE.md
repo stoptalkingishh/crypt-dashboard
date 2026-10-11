@@ -41,6 +41,7 @@ index.html
    ├─ search & bangs    parseBang(), searchDestination()
    ├─ tabs + launcher   renderTabs(), renderGrid(), tile drag-reorder
    ├─ GitHub repos      fetchRepos(), renderRepos(), openRepoModal()
+   ├─ collection        startScan()/handleUpc(), matchLibrary(), upcLookup()
    ├─ auth (PKCE)       signInWithGoogle(), handleOAuthCallback(), refresh
    ├─ Drive backup      driveSave()/driveLoad() -> appDataFolder
    ├─ Gemini            loadAi(), runGemini(), openAi()
@@ -48,8 +49,8 @@ index.html
    └─ boot              renderClock, initWeather, handleOAuthCallback, boot
 ```
 
-`type: "github"` categories render `#view-repos`; `type: "links"` categories
-render the tile grid.
+`type: "github"` categories render `#view-repos`; `type: "scan"` categories
+render `#view-scan`; `type: "links"` categories render the tile grid.
 
 ## Data flow
 
@@ -60,11 +61,18 @@ GitHub        api.github.com ───────▶ cache ─┤              
 Auth          accounts.google.com ──▶ tokens ┤  (optional)   │   (appDataFolder)
 Drive backup  drive v3 (appDataFolder) ◀─────┘               │
 Gemini        generativelanguage.googleapis.com ◀────────────┘ (direct, BYO key)
+Scanner       proxy -> UPCitemdb (+ api.themoviedb.com) ──▶ match in memory ───┘
+Library       homelab Jellyfin ──(scripts/jellyfin-inventory.mjs, outside the app)
+              ──▶ library.json ──(Admin import)──▶ state.library
 ```
 
 - GitHub responses are cached 10 min (`cryptdash:ghcache:v1`) to respect rate
   limits (60/hr unauthenticated, 5 000/hr with a token).
 - Weather is cached 15 min.
+- The library is a **snapshot**, not a live Jellyfin query: Jellyfin never
+  receives cross-origin browser traffic, and the LAN URL needn't resolve on the
+  phone. Scans are matched in memory; nothing about a scan is persisted unless
+  the user adds it to `physical`.
 - Drive backup is manual or debounced (2.5 s) when "auto back up" is on.
 
 ## Extending

@@ -18,7 +18,7 @@ All notable changes are documented here. Format loosely follows
 ### Deployed
 - Public launcher on GitHub Pages (`stoptalkingishh.github.io/crypt-dashboard/`).
 - Secure dashboard on Cloudflare Pages (`home.cryptanalyst.dev`) behind Cloudflare
-  Access (allow-list `ismael32396@gmail.com`).
+  Access (email allow-list).
 
 ## [0.1.0]
 

@@ -24,12 +24,12 @@ if [ -f "$HERE/.env" ]; then set -a; . "$HERE/.env"; set +a; fi
 API="https://api.cloudflare.com/client/v4"
 : "${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN (or create cloudflare/.env)}"
 
-ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-ba10a52df0de1b9f345e28779a987603}"
-ZONE_ID="${CLOUDFLARE_ZONE_ID:-e2bc48792b4502dcc7835028cd07f187}"
+ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:?set CLOUDFLARE_ACCOUNT_ID (Account ID)}"
+ZONE_ID="${CLOUDFLARE_ZONE_ID:?set CLOUDFLARE_ZONE_ID (Zone ID)}"
 PROJECT="${PAGES_PROJECT:-crypt-dashboard-secure}"
 HOSTNAME="${SECURE_HOSTNAME:-home.cryptanalyst.dev}"
 SESSION="${SESSION_DURATION:-24h}"
-EMAILS="${ACCESS_ALLOWED_EMAILS:-ismael32396@gmail.com}"
+EMAILS="${ACCESS_ALLOWED_EMAILS:?set ACCESS_ALLOWED_EMAILS to the comma-separated allow-list}"
 
 api() { # api METHOD PATH [JSON_BODY]  -> prints JSON response
   local method="$1" path="$2" body="${3:-}"

@@ -19,10 +19,14 @@ is idempotent. It creates the Pages project, attaches `home.cryptanalyst.dev`,
 creates the proxied DNS record, and creates the Access application + policy.
 
 ```sh
-cp cloudflare/.env.example cloudflare/.env    # add CLOUDFLARE_API_TOKEN
+cp cloudflare/.env.example cloudflare/.env    # fill in token, ids, email(s)
 ./cloudflare/setup.sh
 npx wrangler pages deploy secure --project-name=crypt-dashboard-secure --branch=main
 ```
+
+`cloudflare/.env` needs: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
+`CLOUDFLARE_ZONE_ID`, and `ACCESS_ALLOWED_EMAILS` (comma-separated). No identifiers
+are hardcoded in the repo.
 
 Token permissions: Account → **Cloudflare Pages: Edit**, Account → **Access: Apps
 and Policies: Edit**, Zone → **DNS: Edit**, Zone → **Zone: Read**.

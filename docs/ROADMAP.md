@@ -2,6 +2,8 @@
 
 ## Done
 
+- [x] Public launcher deployed on GitHub Pages
+- [x] Secure dashboard deployed on Cloudflare Pages (`home.cryptanalyst.dev`) behind Access
 - [x] Two static surfaces (`public/`, `secure/`) deployed from one repo
 - [x] Launcher: clock, bang search, keyless weather, categorized tiles, drag-reorder, theme
 - [x] GitHub repo dashboard (public + token-authenticated) with detail modal
@@ -18,9 +20,13 @@
       (spec in [NEWS.md](NEWS.md)): RSS proxy, TF-IDF clustering, bias bar,
       blindspot, framing divergence, Gemini briefings. *Scaffolding exists on the
       public surface only.*
-- [ ] Fill placeholders: `SECURE_URL`, `cloudflare/terraform.tfvars`,
-      Google OAuth secrets.
-- [ ] Publish consent screen to avoid 7-day refresh-token expiry.
+- [ ] Google OAuth: create the client, set repo secrets
+      `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, add redirect URIs
+      (`https://cryptanalyst.dev/`, `https://home.cryptanalyst.dev/`).
+- [ ] CI secrets for the secure deploy: `CLOUDFLARE_API_TOKEN`,
+      `CLOUDFLARE_ACCOUNT_ID`.
+- [ ] Attach the `cryptanalyst.dev` custom domain to the GitHub Pages site.
+- [ ] Publish the Google consent screen (avoids 7-day refresh-token expiry).
 
 ## Later / ideas
 

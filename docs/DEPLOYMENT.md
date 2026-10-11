@@ -57,12 +57,16 @@ const SECURE_URL = "https://home.cryptanalyst.dev";   // your Access hostname
 
 Full walkthrough: [../cloudflare/README.md](../cloudflare/README.md). Summary:
 
+- **Fast path (script):** `cloudflare/setup.sh` provisions the Pages project,
+  custom domain, DNS, and Access app/policy via the API (idempotent, no
+  Terraform). Then `npx wrangler pages deploy secure --project-name=crypt-dashboard-secure --branch=main`.
 - **Git integration:** Workers & Pages → Create → Pages → connect the repo; build
   output directory `secure`, build command empty.
 - **Or CI:** `deploy-secure.yml` uploads `secure/` with Wrangler
-  (`pages deploy secure --project-name=crypt-dashboard-secure`).
+  (`pages deploy secure --project-name=crypt-dashboard-secure`); needs repo
+  secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 - **Custom domain** + **Cloudflare Access application** on that hostname.
-- Terraform for the Pages domain + Access app/policy lives in `cloudflare/`:
+- Terraform alternative for the Pages domain + Access app/policy lives in `cloudflare/`:
 
   ```sh
   cd cloudflare

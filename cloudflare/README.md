@@ -12,6 +12,21 @@ does not pass through Cloudflare, so an Access policy cannot protect it.
 Cloudflare Pages gives the secure surface its own origin that **only** exists
 behind Cloudflare, so Access can gate it with no bypass.
 
+## Quick start (script — recommended)
+
+`setup.sh` provisions everything via the Cloudflare API (no Terraform needed) and
+is idempotent. It creates the Pages project, attaches `home.cryptanalyst.dev`,
+creates the proxied DNS record, and creates the Access application + policy.
+
+```sh
+cp cloudflare/.env.example cloudflare/.env    # add CLOUDFLARE_API_TOKEN
+./cloudflare/setup.sh
+npx wrangler pages deploy secure --project-name=crypt-dashboard-secure --branch=main
+```
+
+Token permissions: Account → **Cloudflare Pages: Edit**, Account → **Access: Apps
+and Policies: Edit**, Zone → **DNS: Edit**, Zone → **Zone: Read**.
+
 ## Option A — Terraform (reproducible)
 
 ```sh

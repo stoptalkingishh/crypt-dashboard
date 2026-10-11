@@ -7,10 +7,18 @@ All notable changes are documented here. Format loosely follows
 ## [Unreleased]
 
 ### Added
+- `cloudflare/setup.sh` + `cloudflare/.env.example` — idempotent API-based
+  provisioning of the secure surface (Pages project, custom domain, DNS, Access
+  app/policy).
 - News & media-bias module **scaffolding** on the public surface only (tab, CSS,
   `settings.news` defaults). Engine not yet implemented — see docs/NEWS.md.
 - `scripts/check.mjs` and `make check` (syntax, secret, hygiene checks).
 - Repo documentation set under `docs/`.
+
+### Deployed
+- Public launcher on GitHub Pages (`stoptalkingishh.github.io/crypt-dashboard/`).
+- Secure dashboard on Cloudflare Pages (`home.cryptanalyst.dev`) behind Cloudflare
+  Access (allow-list `ismael32396@gmail.com`).
 
 ## [0.1.0]
 

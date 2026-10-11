@@ -65,3 +65,7 @@ break the contract (parse errors, leaked secrets, internal hosts in public).
 - `__GOOGLE_CLIENT_ID__` / `__GOOGLE_CLIENT_SECRET__` placeholders are required
   for deploy-time injection; `check.mjs` fails if they're missing.
 - Homelab hostnames belong only in `secure/index.html`.
+- Secure homelab tiles use the codename hostnames
+  (`cipher`/`cinema`/`player`/`pulse`/`oracle`/`gate`).cryptanalyst.dev. See the
+  workspace `AGENTS.md` → "Homelab service codenames"; keep in sync with
+  `homelab/cloudflare/hostnames.tsv`.

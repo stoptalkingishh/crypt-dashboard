@@ -363,12 +363,15 @@ function defaultState() {
     },
     categories: [
       { id: "home", name: "Home", type: "links", tiles: [
+        { name: "cipher", sub: "vaultwarden", url: "https://cipher.cryptanalyst.dev" },
+        { name: "cinema", sub: "jellyfin", url: "https://cinema.cryptanalyst.dev" },
+        { name: "pulse", sub: "grafana", url: "https://pulse.cryptanalyst.dev" },
+        { name: "oracle", sub: "nomad", url: "https://oracle.cryptanalyst.dev" },
+        { name: "gate", sub: "headscale", url: "https://gate.cryptanalyst.dev" },
+        { name: "player", sub: "jellyfin apps", url: "https://player.cryptanalyst.dev" },
+        { name: "Pi-hole", sub: "LAN", url: "http://192.168.1.10/admin/" },
         { name: "GitHub", url: "https://github.com" },
         { name: "Hacker News", url: "https://news.ycombinator.com" },
-        { name: "Jellyfin", url: "http://jellyfin.home:8096" },
-        { name: "Pi-hole", url: "http://192.168.1.10/admin/" },
-        { name: "Vaultwarden", url: "https://vault.attlocal.net:8443" },
-        { name: "Grafana", url: "http://192.168.1.125:3000" },
       ] },
       { id: "repos", name: "Repos", type: "github", tiles: [] },
       { id: "dev", name: "Dev", type: "links", tiles: [

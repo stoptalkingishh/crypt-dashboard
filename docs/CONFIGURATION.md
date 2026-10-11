@@ -43,7 +43,9 @@ in news settings are replaced similarly.
 - `settings.github.users` is an **array** (multiple accounts); `settings.github.token`
   holds an optional GitHub PAT (see [SECURITY-MODEL.md](SECURITY-MODEL.md)).
 - The default `home` category contains homelab tiles that are **never** present in
-  the public surface.
+  the public surface. They use the codename hostnames
+  (`cipher`/`cinema`/`player`/`pulse`/`oracle`/`gate`).cryptanalyst.dev, each
+  gated by the same Cloudflare Access as the dashboard.
 
 ## localStorage keys
 

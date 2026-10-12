@@ -180,6 +180,7 @@
   .tile.dragover { border-color: var(--accent-2); }
   .tile .badge { position: absolute; top: 8px; right: 8px; font-size: 9.5px; color: var(--faint); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }
   .tile.add { align-items: center; justify-content: center; color: var(--faint); border-style: dashed; text-align: center; }
+  .tile.add { appearance: none; }
   .tile.add:hover { color: var(--accent); }
 
   /* ---------- repo cards ---------- */
@@ -246,6 +247,12 @@
   .modal-card .mhead h3 { margin: 0; font-size: 17px; color: var(--accent-2); }
   .modal-card .mhead .sub { color: var(--faint); font-size: 12px; margin-top: 4px; }
   .modal-card .mbody { padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .quick-add-card { max-width: 500px; }
+  .quick-add-form { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .quick-add-form label { display: flex; flex-direction: column; gap: 5px; color: var(--muted); font-size: 12px; }
+  .quick-add-form input, .quick-add-form select { width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px; outline: none; }
+  .quick-add-form input:focus, .quick-add-form select:focus { border-color: var(--accent); }
+  .quick-add-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
   .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
   .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
   .stat .k { color: var(--faint); font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; }
@@ -488,6 +495,96 @@ function faviconFor(url) {
   if (!h) return "";
   return "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(h);
 }
+const FAVICON_CACHE = "cryptdash:favicon:v1";
+const FAVICON_CACHE_PREFIX = "cryptdash:favicon:";
+const FAVICON_MAX_BYTES = 128 * 1024;
+const FAVICON_MAX_ENTRIES = 100;
+let faviconCachePromise;
+let faviconTrimQueue = Promise.resolve();
+const faviconInflight = new Map();
+function openFaviconCache() {
+  if (!faviconCachePromise) faviconCachePromise = (async () => {
+    if (!window.caches) return null;
+    try {
+      const names = await caches.keys();
+      await Promise.all(names.filter(name => name.startsWith(FAVICON_CACHE_PREFIX) && name !== FAVICON_CACHE).map(name => caches.delete(name)));
+      return await caches.open(FAVICON_CACHE);
+    } catch { return null; }
+  })();
+  return faviconCachePromise;
+}
+async function trimFaviconCache(cache, keepUrl) {
+  faviconTrimQueue = faviconTrimQueue.then(async () => {
+    try {
+      const keys = await cache.keys();
+      let excess = keys.length - FAVICON_MAX_ENTRIES;
+      for (const request of keys) {
+        if (excess <= 0) break;
+        if (request.url === keepUrl) continue;
+        if (await cache.delete(request)) excess--;
+      }
+    } catch {}
+  });
+  await faviconTrimQueue;
+}
+async function cachedFaviconBlob(url) {
+  const cache = await openFaviconCache();
+  if (!cache) return null;
+  try {
+    const response = await cache.match(url);
+    const type = (response && response.headers.get("content-type") || "").toLowerCase();
+    if (!response || !response.ok || (type && !type.startsWith("image/"))) return null;
+    const blob = await response.blob();
+    return blob.size > 0 && blob.size <= FAVICON_MAX_BYTES ? blob : null;
+  } catch { return null; }
+}
+function fetchFaviconBlob(url) {
+  if (faviconInflight.has(url)) return faviconInflight.get(url);
+  const pending = (async () => {
+    const cache = await openFaviconCache();
+    if (cache) {
+      const cached = await cachedFaviconBlob(url);
+      if (cached) return cached;
+    }
+    const proxy = collectionProxy();
+    const proxyUrl = proxy.includes("{url}") ? proxy.replace("{url}", encodeURIComponent(url)) : proxy + encodeURIComponent(url);
+    for (const requestUrl of [url, proxyUrl]) {
+      try {
+        const response = await fetch(requestUrl);
+        const type = (response.headers.get("content-type") || "").trim();
+        const length = Number(response.headers.get("content-length"));
+        if (!response.ok || (type && !type.toLowerCase().startsWith("image/")) || (length && length > FAVICON_MAX_BYTES)) continue;
+        const blob = await response.blob();
+        if (!blob.size || blob.size > FAVICON_MAX_BYTES) continue;
+        if (cache) {
+          try {
+            const headers = type ? { "Content-Type": type } : {};
+            await cache.put(url, new Response(blob, { headers }));
+            await trimFaviconCache(cache, url);
+          } catch {}
+        }
+        return blob;
+      } catch {}
+    }
+    return null;
+  })().finally(() => faviconInflight.delete(url));
+  faviconInflight.set(url, pending);
+  return pending;
+}
+function loadFavicon(img, pageUrl) {
+  const remoteUrl = faviconFor(pageUrl);
+  if (!remoteUrl) { img.style.display = "none"; img.nextElementSibling.hidden = false; return; }
+  fetchFaviconBlob(remoteUrl).then(blob => {
+    if (!img.isConnected) return;
+    if (!blob) { img.src = remoteUrl; return; }
+    const localUrl = URL.createObjectURL(blob);
+    img.addEventListener("load", () => URL.revokeObjectURL(localUrl), { once: true });
+    img.addEventListener("error", () => URL.revokeObjectURL(localUrl), { once: true });
+    img.src = localUrl;
+  }).catch(() => {
+    if (img.isConnected) img.src = remoteUrl;
+  });
+}
 function timeAgo(iso) {
   const d = new Date(iso).getTime();
   if (isNaN(d)) return "";
@@ -668,7 +765,7 @@ function initSearch() {
       moveTileFocus(e.key);
       return;
     }
-    if (e.key === "Enter" && focusedTileIndex >= 0 && !tileDragInProgress) {
+    if (e.key === "Enter" && focusedTileIndex >= 0 && !tileDragInProgress && !document.activeElement?.classList.contains("add")) {
       const tile = $("grid").querySelectorAll(".tile:not(.add)")[focusedTileIndex];
       if (tile && document.activeElement !== tile) { e.preventDefault(); tile.click(); return; }
     }
@@ -736,10 +833,12 @@ function renderGrid() {
   if (focusedTileIndex >= tiles.length) focusedTileIndex = tiles.length - 1;
   if (focusedTileIndex >= 0) setTileFocus(focusedTileIndex, true);
   else tiles.forEach((tile, idx) => { tile.tabIndex = idx === 0 ? 0 : -1; });
-  const add = document.createElement("div");
+  const add = document.createElement("button");
+  add.type = "button";
   add.className = "tile add";
-  add.innerHTML = '<div style="font-size:22px">＋</div><div style="font-size:12px">Add tile</div>';
-  add.addEventListener("click", () => openAdmin("tiles"));
+  add.setAttribute("aria-label", "Add site");
+  add.innerHTML = '<span style="font-size:22px">＋</span><span style="font-size:12px">Add site</span>';
+  add.addEventListener("click", openQuickAddModal);
   grid.appendChild(add);
 }
 function tileEl(t, cat, idx) {
@@ -752,10 +851,11 @@ function tileEl(t, cat, idx) {
   a.dataset.idx = idx;
   const badge = t.badge ? '<span class="badge">' + esc(t.badge) + "</span>" : "";
   a.innerHTML = badge +
-    '<img class="fav" alt="" loading="lazy" src="' + esc(faviconFor(t.url)) + '" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
+    '<img class="fav" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
     '<div class="fallback" hidden>' + esc((t.name || "?").slice(0, 1).toUpperCase()) + "</div>" +
     '<div class="name">' + esc(t.name) + "</div>" +
     '<div class="sub">' + esc(t.sub || hostOf(t.url) || "") + "</div>";
+  loadFavicon(a.querySelector(".fav"), t.url);
   // drag reorder
   a.addEventListener("dragstart", (e) => { tileDragInProgress = true; a.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
   a.addEventListener("dragend", () => { tileDragInProgress = false; a.classList.remove("drag"); });
@@ -942,6 +1042,54 @@ async function openRepoModal(full) {
 }
 function stat(k, v) { return '<div class="stat"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
 function closeOverlay() { const o = $("overlay"); o.hidden = true; o.innerHTML = ""; o.onclick = null; }
+function openQuickAddModal() {
+  const categories = state.categories.filter(c => c.type === "links");
+  if (!categories.length) { toast("Add a links category in Admin first", true); return; }
+  const current = categories.find(c => c.id === activeCat) || categories[0];
+  const options = categories.map(c => '<option value="' + esc(c.id) + '"' + (c.id === current.id ? " selected" : "") + '>' + esc(c.name) + "</option>").join("");
+  const overlay = $("overlay");
+  overlay.hidden = false;
+  overlay.innerHTML =
+    '<div class="modal-card quick-add-card" role="dialog" aria-modal="true" aria-labelledby="quick-add-title">' +
+      '<div class="mhead"><div style="flex:1"><h3 id="quick-add-title">Add site</h3><div class="sub">Add a link to one of your categories.</div></div><button class="btn" type="button" data-quick-close>close</button></div>' +
+      '<form class="quick-add-form" id="quick-add-form">' +
+        '<label for="quick-add-url">URL<input id="quick-add-url" name="url" type="text" inputmode="url" placeholder="example.com" autocomplete="url"></label>' +
+        '<label for="quick-add-name">Name <span>(optional)</span><input id="quick-add-name" name="name" type="text" autocomplete="off"></label>' +
+        '<label for="quick-add-category">Category<select id="quick-add-category" name="category">' + options + "</select></label>" +
+        '<div class="quick-add-actions"><button class="btn" type="button" data-quick-close>cancel</button><button class="btn primary" type="submit">Add site</button></div>' +
+      "</form>" +
+    "</div>";
+  overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
+  overlay.querySelectorAll("[data-quick-close]").forEach(button => button.addEventListener("click", closeOverlay));
+  $("quick-add-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    let url = $("quick-add-url").value.trim();
+    if (!url) { toast("Enter a valid URL", true); $("quick-add-url").focus(); return; }
+    if (!/^https?:\/\//i.test(url)) {
+      if (/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) { toast("Enter a valid URL", true); $("quick-add-url").focus(); return; }
+      url = "https://" + url;
+    }
+    let parsed;
+    try { parsed = new URL(url); } catch {}
+    if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname || /\s/.test(url) || (!parsed.hostname.includes(".") && parsed.hostname !== "localhost" && !parsed.hostname.startsWith("["))) {
+      toast("Enter a valid URL", true);
+      $("quick-add-url").focus();
+      return;
+    }
+    const category = categories.find(c => c.id === $("quick-add-category").value);
+    if (!category) { toast("Choose a valid category", true); return; }
+    const name = $("quick-add-name").value.trim() || hostOf(url);
+    category.tiles.push({ name, url });
+    activeCat = category.id;
+    focusedTileIndex = -1;
+    saveState();
+    closeOverlay();
+    renderTabs();
+    renderView();
+    toast("Added " + name);
+  });
+  $("quick-add-url").focus();
+}
 
 /* ---------- view switching ---------- */
 function renderView() {
@@ -1357,6 +1505,80 @@ function exportLibrary(format) {
   } else { text = JSON.stringify(lib, null, 2); name = "library.json"; mime = "application/json"; }
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: mime })); a.download = name; a.click();
 }
+function parseBookmarks(text) {
+  const doc = new DOMParser().parseFromString(text, "text/html");
+  if (doc.querySelector("parsererror") || !doc.querySelector("dl")) throw new Error("invalid HTML");
+  const folders = new Map();
+  const folderForDt = new Map();
+  doc.querySelectorAll("dt").forEach(dt => {
+    const heading = [...dt.children].find(child => child.tagName === "H3");
+    const name = heading && heading.textContent.trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (!folders.has(key)) folders.set(key, { name, links: [] });
+    folderForDt.set(dt, folders.get(key));
+  });
+  const rootLinks = [];
+  doc.querySelectorAll("a[href]").forEach(anchor => {
+    const href = (anchor.getAttribute("href") || "").trim();
+    if (!href) return;
+    let url;
+    try { url = new URL(href); } catch { return; }
+    if (url.protocol !== "http:" && url.protocol !== "https:") return;
+    let folder = null;
+    for (let parent = anchor.parentElement; parent; parent = parent.parentElement) {
+      if (parent.tagName === "DT" && folderForDt.has(parent)) { folder = folderForDt.get(parent); break; }
+    }
+    (folder ? folder.links : rootLinks).push({ name: anchor.textContent.trim() || url.href, url: url.href });
+  });
+  if (!rootLinks.length && ![...folders.values()].some(folder => folder.links.length)) throw new Error("empty bookmarks");
+  return { folders: [...folders.values()], rootLinks };
+}
+function importBookmarks(file) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const parsed = parseBookmarks(rd.result);
+      collectAdmin();
+      let added = 0;
+      const destinations = new Set();
+      const mergeLinks = (category, links) => {
+        const urls = new Set(category.tiles.map(tile => {
+          try { return new URL(tile.url).href; } catch { return String(tile.url || "").trim(); }
+        }));
+        links.forEach(tile => {
+          if (urls.has(tile.url)) return;
+          category.tiles.push(tile);
+          urls.add(tile.url);
+          added++;
+        });
+      };
+      parsed.folders.forEach(folder => {
+        let category = state.categories.find(item => item.type === "links" && item.name.trim().toLowerCase() === folder.name.toLowerCase());
+        if (!category) {
+          category = { id: uid(), name: folder.name, type: "links", tiles: [] };
+          state.categories.push(category);
+        }
+        destinations.add(category.id);
+        mergeLinks(category, folder.links);
+      });
+      if (parsed.rootLinks.length) {
+        let category = state.categories.find(item => item.type === "links");
+        if (!category) {
+          category = { id: uid(), name: "Imported", type: "links", tiles: [] };
+          state.categories.push(category);
+        }
+        destinations.add(category.id);
+        mergeLinks(category, parsed.rootLinks);
+      }
+      saveState();
+      renderTabs(); renderView(); renderAdmin();
+      toast("Imported " + added + " bookmarks into " + destinations.size + " folders");
+    } catch { toast("Invalid or empty bookmarks file", true); }
+  };
+  rd.onerror = () => toast("Could not read bookmarks file", true);
+  rd.readAsText(file);
+}
 
 /* ---------- admin panel ---------- */
 function openAdmin(section) {
@@ -1442,7 +1664,7 @@ function renderAdmin(section) {
       "</fieldset>" +
 
       '<fieldset class="fieldset"><legend>backup</legend>' +
-        '<div class="row"><button class="btn" id="btn-export">export json</button><button class="btn" id="btn-import-file">import json</button><input type="file" id="file-import" accept="application/json" hidden></div>' +
+        '<div class="row"><button class="btn" id="btn-export">export json</button><button class="btn" id="btn-import-file">import json</button><input type="file" id="file-import" accept="application/json" hidden><button class="btn" id="btn-bookmarks-import">import bookmarks</button><input type="file" id="bookmarks-file" accept=".html,.htm" hidden></div>' +
         '<div class="row"><button class="btn danger" id="btn-reset">reset to defaults</button></div>' +
       "</fieldset>" +
 
@@ -1515,6 +1737,12 @@ function wireAdmin() {
     URL.revokeObjectURL(a.href);
   });
   $("btn-import-file").addEventListener("click", () => $("file-import").click());
+  $("btn-bookmarks-import").addEventListener("click", () => $("bookmarks-file").click());
+  $("bookmarks-file").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (f) importBookmarks(f);
+    e.target.value = "";
+  });
   $("file-import").addEventListener("change", (e) => {
     const f = e.target.files[0]; if (!f) return;
     const rd = new FileReader();
@@ -1565,6 +1793,7 @@ function collectAdmin() {
 
 /* ---------- boot ---------- */
 function boot() {
+  openFaviconCache();
   $("brand-name").textContent = state.settings.title || "crypt-dashboard";
   $("gh-user").textContent = (state.settings.github.users || []).join(", ");
   const input = $("q"); if (input) input.placeholder = "Search your sites, type a URL, or use a bang (!gh cats, !yt lofi)…";

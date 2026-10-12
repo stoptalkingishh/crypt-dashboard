@@ -122,6 +122,20 @@
   .wx { color: var(--text); }
   .wx .ic { color: var(--warn); margin-right: 3px; }
   .wx .loc { color: var(--faint); }
+  .wx-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin: 0 0 18px; }
+  .wx-current { margin-bottom: 9px; }
+  .wx-controls { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+  .wx-controls input { flex: 1; min-width: 160px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; outline: none; }
+  .wx-controls input:focus { border-color: var(--accent); }
+  .wx-results { display: flex; flex-direction: column; gap: 4px; margin-top: 7px; }
+  .wx-results:empty { display: none; }
+  .wx-result { text-align: left; background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; cursor: pointer; color: var(--muted); font-size: 11.5px; }
+  .wx-result:hover { border-color: var(--accent); color: var(--text); }
+  .wx-message { color: var(--faint); font-size: 11px; margin: 5px 0 0; }
+  .wx-forecast { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .wx-day { text-align: center; background: var(--panel-2); border-radius: 7px; padding: 7px 4px; font-size: 10.5px; color: var(--muted); }
+  .wx-day .icon { display: block; font-size: 15px; }
+  .wx-day .temps { display: block; margin-top: 2px; color: var(--text); white-space: nowrap; }
 
   /* ---------- search ---------- */
   .search { position: relative; margin-bottom: 14px; }
@@ -157,7 +171,7 @@
     background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 15px 14px; min-height: 96px; transition: .15s; overflow: hidden; cursor: pointer;
   }
-  .tile:hover, .tile:focus-visible { border-color: var(--accent); transform: translateY(-2px); background: var(--panel-2); outline: none; }
+  .tile:hover, .tile:focus-visible, .tile.keyboard-focused { border-color: var(--accent); transform: translateY(-2px); background: var(--panel-2); outline: none; }
   .tile .fav { width: 26px; height: 26px; border-radius: 6px; object-fit: contain; background: color-mix(in srgb, var(--text) 6%, transparent); }
   .tile .fallback { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; font-weight: 700; color: #06120c; background: var(--accent); font-size: 13px; }
   .tile .name { font-size: 13px; font-weight: 600; line-height: 1.25; margin-top: auto; word-break: break-word; }
@@ -281,11 +295,21 @@
       <h1 class="clock"><span id="time">--:--</span><span class="mer" id="mer"></span></h1>
       <div class="daterow">
         <span id="date">Loading…</span>
-        <span class="dot" id="wx-dot" hidden>&middot;</span>
-        <span class="wx" id="wx" hidden><span class="ic">&#9788;</span><span id="wx-text"></span> <span class="loc" id="wx-loc"></span></span>
       </div>
     </div>
   </div>
+
+  <section class="wx-card" aria-label="Weather">
+    <div class="wx-current" id="wx-current" hidden><span class="dot" id="wx-dot" hidden>&middot;</span> <span class="wx" id="wx" hidden><span class="ic">&#9788;</span><span id="wx-text"></span> <span class="loc" id="wx-loc"></span></span></div>
+    <div class="wx-controls">
+      <input id="wx-city" type="search" placeholder="Enter a city" aria-label="Search weather by city" autocomplete="off">
+      <button class="btn" id="wx-search" type="button">search city</button>
+      <button class="btn" id="wx-geolocate" type="button">use my location</button>
+    </div>
+    <div class="wx-results" id="wx-results" role="listbox" aria-label="City search results"></div>
+    <p class="wx-message" id="wx-message" aria-live="polite"></p>
+    <div class="wx-forecast" id="wx-forecast" aria-label="Four-day forecast"></div>
+  </section>
 
   <form class="search" id="search" autocomplete="off" role="search">
     <input id="q" type="text" placeholder="Search your sites, type a URL, or use a bang (!gh cats, !yt lofi)…" autofocus spellcheck="false" aria-label="Search" />
@@ -365,6 +389,12 @@ const BANGS = {
 };
 
 /* ---------- default state ---------- */
+const SEARCH_PRESETS = [
+  { name: "Google", url: "https://www.google.com/search?q={q}" },
+  { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={q}" },
+  { name: "Bing", url: "https://www.bing.com/search?q={q}" },
+  { name: "YouTube", url: "https://www.youtube.com/results?search_query={q}" },
+];
 function defaultState() {
   return {
     version: 1,
@@ -373,6 +403,7 @@ function defaultState() {
       theme: "auto",
       hour12: true,
       search: { name: "Google", url: "https://www.google.com/search?q={q}" },
+      openIn: "same",
       weather: { latitude: null, longitude: null, unit: "fahrenheit", label: "" },
       github: { users: [], token: "", sort: "updated", hideForks: false, liveRepos: true },
       collection: { proxy: "https://api.allorigins.win/raw?url={url}", tmdbKey: "" },
@@ -414,6 +445,8 @@ function defaultState() {
 /* ---------- state ---------- */
 let state = loadState();
 let activeCat = state.categories.find(c => c.id === "home") ? "home" : (state.categories[0] || {}).id;
+let focusedTileIndex = -1;
+let tileDragInProgress = false;
 let repoData = null;       // { repos: [], at: ts, error }
 let repoLoading = false;
 
@@ -427,6 +460,7 @@ function migrate(s) {
   const def = defaultState();
   s.settings = Object.assign({}, def.settings, s.settings || {});
   s.settings.search = Object.assign({}, def.settings.search, s.settings.search || {});
+  s.settings.openIn = s.settings.openIn === "new" ? "new" : "same";
   s.settings.weather = Object.assign({}, def.settings.weather, s.settings.weather || {});
   s.settings.github = Object.assign({}, def.settings.github, s.settings.github || {});
   s.settings.collection = Object.assign({}, def.settings.collection, s.settings.collection || {});
@@ -501,29 +535,87 @@ const WX_CODES = { 0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overca
   61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain",
   71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains", 80: "Light showers", 81: "Showers",
   82: "Heavy showers", 85: "Snow showers", 86: "Snow showers", 95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm" };
+const WX_ICONS = { 0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️", 45: "🌫️", 48: "🌫️", 51: "🌦️", 53: "🌦️", 55: "🌧️", 56: "🌧️", 57: "🌧️",
+  61: "🌧️", 63: "🌧️", 65: "🌧️", 66: "🌧️", 67: "🌧️", 71: "🌨️", 73: "🌨️", 75: "❄️", 77: "❄️", 80: "🌦️", 81: "🌧️",
+  82: "🌧️", 85: "🌨️", 86: "❄️", 95: "⛈️", 96: "⛈️", 99: "⛈️" };
 
 async function initWeather() {
   const cfg = state.settings.weather || {};
-  if (cfg.latitude == null || cfg.longitude == null) { $("wx").hidden = true; $("wx-dot").hidden = true; return; }
+  if (cfg.latitude == null || cfg.longitude == null) { $("wx").hidden = true; $("wx-dot").hidden = true; $("wx-current").hidden = true; $("wx-forecast").innerHTML = ""; return; }
   let cached = null;
   try { cached = JSON.parse(localStorage.getItem(WX_CACHE_KEY)); } catch {}
-  if (cached && cached.current && Date.now() - cached.at < 15 * 60 * 1000 && cached.lat === cfg.latitude && cached.lon === cfg.longitude) { renderWeather(cached.current, cfg); return; }
+  if (cached && cached.current && cached.daily && cached.unit === (cfg.unit || "fahrenheit") && Date.now() - cached.at < 15 * 60 * 1000 && cached.lat === cfg.latitude && cached.lon === cfg.longitude) { renderWeather(cached.current, cached.daily, cfg); return; }
   try {
     const url = "https://api.open-meteo.com/v1/forecast?latitude=" + cfg.latitude + "&longitude=" + cfg.longitude +
-      "&current=temperature_2m,weather_code&temperature_unit=" + (cfg.unit || "fahrenheit") + "&timezone=auto";
+      "&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=" + (cfg.unit || "fahrenheit") + "&timezone=auto";
     const r = await fetch(url);
     if (!r.ok) return;
     const data = await r.json();
-    if (!data.current) return;
-    renderWeather(data.current, cfg);
-    localStorage.setItem(WX_CACHE_KEY, JSON.stringify({ at: Date.now(), lat: cfg.latitude, lon: cfg.longitude, current: data.current }));
+    if (!data.current || !data.daily) return;
+    renderWeather(data.current, data.daily, cfg);
+    localStorage.setItem(WX_CACHE_KEY, JSON.stringify({ at: Date.now(), lat: cfg.latitude, lon: cfg.longitude, unit: cfg.unit || "fahrenheit", current: data.current, daily: data.daily }));
   } catch {}
 }
-function renderWeather(cur, cfg) {
+function renderWeather(cur, daily, cfg) {
   const cond = WX_CODES[cur.weather_code] || "";
   $("wx-text").textContent = Math.round(cur.temperature_2m) + "° " + cond;
   $("wx-loc").textContent = cfg.label ? "· " + cfg.label : "";
-  $("wx").hidden = false; $("wx-dot").hidden = false;
+  $("wx").hidden = false; $("wx-dot").hidden = false; $("wx-current").hidden = false;
+  const days = (daily.time || []).slice(0, 4);
+  $("wx-forecast").innerHTML = days.map((day, i) => {
+    const code = daily.weather_code[i];
+    const name = new Date(day + "T12:00:00").toLocaleDateString(undefined, { weekday: "short" });
+    return '<div class="wx-day" title="' + esc(WX_CODES[code] || "") + '"><span>' + esc(name) + '</span><span class="icon" aria-hidden="true">' + (WX_ICONS[code] || "🌡️") + '</span><span class="temps">' + Math.round(daily.temperature_2m_max[i]) + '° / ' + Math.round(daily.temperature_2m_min[i]) + '°</span></div>';
+  }).join("");
+}
+function initWeatherControls() {
+  const input = $("wx-city"), results = $("wx-results"), message = $("wx-message");
+  async function searchCity() {
+    const query = input.value.trim();
+    results.innerHTML = "";
+    message.textContent = "";
+    if (!query) { message.textContent = "Enter a city name to search."; return; }
+    message.textContent = "Searching…";
+    try {
+      const url = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(query) + "&count=5&language=en&format=json";
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("City search failed");
+      const data = await r.json();
+      const places = data.results || [];
+      message.textContent = places.length ? "Choose a location:" : "No matching cities found.";
+      results.innerHTML = places.map((place, i) => {
+        const details = [place.admin1, place.country].filter(Boolean).join(", ");
+        return '<button class="wx-result" type="button" role="option" data-place="' + i + '"><strong>' + esc(place.name) + '</strong>' + (details ? ' · ' + esc(details) : "") + ' · ' + Number(place.latitude).toFixed(2) + ', ' + Number(place.longitude).toFixed(2) + '</button>';
+      }).join("");
+      results.querySelectorAll(".wx-result").forEach((button) => button.addEventListener("click", () => {
+        const place = places[+button.dataset.place];
+        state.settings.weather.latitude = place.latitude;
+        state.settings.weather.longitude = place.longitude;
+        state.settings.weather.label = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
+        saveState();
+        input.value = "";
+        results.innerHTML = "";
+        message.textContent = "Location saved.";
+        initWeather();
+      }));
+    } catch { message.textContent = "City search is unavailable. Please try again."; }
+  }
+  $("wx-search").addEventListener("click", searchCity);
+  input.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); searchCity(); } });
+  $("wx-geolocate").addEventListener("click", () => {
+    if (!navigator.geolocation) { message.textContent = "Location is unavailable in this browser."; return; }
+    message.textContent = "Getting your location…";
+    navigator.geolocation.getCurrentPosition((position) => {
+      state.settings.weather.latitude = position.coords.latitude;
+      state.settings.weather.longitude = position.coords.longitude;
+      state.settings.weather.label = "live · my location";
+      saveState();
+      message.textContent = "Location saved.";
+      initWeather();
+    }, (error) => {
+      message.textContent = error.code === 1 ? "Location permission was denied." : "Could not determine your location.";
+    });
+  });
 }
 
 /* ---------- search & bangs ---------- */
@@ -564,11 +656,59 @@ function initSearch() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "Escape" && focusedTileIndex >= 0) {
+      e.preventDefault();
+      clearTileFocus();
+      return;
+    }
     const tag = (document.activeElement || {}).tagName || "";
     if (/^(INPUT|TEXTAREA|SELECT)$/i.test(tag) || document.activeElement?.isContentEditable) return;
+    if (!tileDragInProgress && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) {
+      e.preventDefault();
+      moveTileFocus(e.key);
+      return;
+    }
+    if (e.key === "Enter" && focusedTileIndex >= 0 && !tileDragInProgress) {
+      const tile = $("grid").querySelectorAll(".tile:not(.add)")[focusedTileIndex];
+      if (tile && document.activeElement !== tile) { e.preventDefault(); tile.click(); return; }
+    }
     if (e.key === "/") { e.preventDefault(); input.focus(); return; }
     if (e.key.length === 1) { input.focus(); }
   });
+}
+
+function setTileFocus(index, moveFocus) {
+  const tiles = [...$("grid").querySelectorAll(".tile:not(.add)")];
+  if (!tiles.length || index < 0 || index >= tiles.length) { focusedTileIndex = -1; return; }
+  focusedTileIndex = index;
+  tiles.forEach((tile, i) => {
+    const selected = i === index;
+    tile.tabIndex = selected ? 0 : -1;
+    tile.classList.toggle("keyboard-focused", selected);
+  });
+  if (moveFocus) tiles[index].focus({ preventScroll: true });
+}
+function clearTileFocus() {
+  const tiles = [...$("grid").querySelectorAll(".tile:not(.add)")];
+  focusedTileIndex = -1;
+  tiles.forEach((tile, i) => {
+    tile.tabIndex = i === 0 ? 0 : -1;
+    tile.classList.remove("keyboard-focused");
+  });
+  if (tiles.includes(document.activeElement)) document.activeElement.blur();
+}
+function moveTileFocus(key) {
+  const tiles = [...$("grid").querySelectorAll(".tile:not(.add)")];
+  if (!tiles.length || $("view-launcher").hidden) return;
+  const activeIndex = tiles.indexOf(document.activeElement);
+  if (focusedTileIndex < 0) {
+    if (activeIndex >= 0) focusedTileIndex = activeIndex;
+    else { setTileFocus(0, true); return; }
+  }
+  const firstTop = tiles[0].getBoundingClientRect().top;
+  const columns = tiles.filter(tile => Math.abs(tile.getBoundingClientRect().top - firstTop) < 1).length || 1;
+  const delta = key === "ArrowLeft" ? -1 : key === "ArrowRight" ? 1 : key === "ArrowUp" ? -columns : columns;
+  setTileFocus(Math.max(0, Math.min(tiles.length - 1, focusedTileIndex + delta)), true);
 }
 
 /* ---------- tabs ---------- */
@@ -579,7 +719,7 @@ function renderTabs() {
     const b = document.createElement("button");
     b.className = "tab" + (c.type === "github" ? " gh" : "") + (c.id === activeCat ? " active" : "");
     b.textContent = c.name;
-    b.addEventListener("click", () => { activeCat = c.id; renderTabs(); renderView(); });
+    b.addEventListener("click", () => { focusedTileIndex = -1; activeCat = c.id; renderTabs(); renderView(); });
     tabs.appendChild(b);
   });
 }
@@ -592,6 +732,10 @@ function renderGrid() {
   const cat = currentCategory();
   if (!cat) return;
   cat.tiles.forEach((t, idx) => grid.appendChild(tileEl(t, cat, idx)));
+  const tiles = [...grid.querySelectorAll(".tile:not(.add)")];
+  if (focusedTileIndex >= tiles.length) focusedTileIndex = tiles.length - 1;
+  if (focusedTileIndex >= 0) setTileFocus(focusedTileIndex, true);
+  else tiles.forEach((tile, idx) => { tile.tabIndex = idx === 0 ? 0 : -1; });
   const add = document.createElement("div");
   add.className = "tile add";
   add.innerHTML = '<div style="font-size:22px">＋</div><div style="font-size:12px">Add tile</div>';
@@ -602,7 +746,9 @@ function tileEl(t, cat, idx) {
   const a = document.createElement("a");
   a.className = "tile";
   a.href = t.url;
+  if (state.settings.openIn === "new") { a.target = "_blank"; a.rel = "noopener noreferrer"; }
   a.setAttribute("draggable", "true");
+  a.tabIndex = idx === 0 ? 0 : -1;
   a.dataset.idx = idx;
   const badge = t.badge ? '<span class="badge">' + esc(t.badge) + "</span>" : "";
   a.innerHTML = badge +
@@ -611,8 +757,8 @@ function tileEl(t, cat, idx) {
     '<div class="name">' + esc(t.name) + "</div>" +
     '<div class="sub">' + esc(t.sub || hostOf(t.url) || "") + "</div>";
   // drag reorder
-  a.addEventListener("dragstart", (e) => { a.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
-  a.addEventListener("dragend", () => a.classList.remove("drag"));
+  a.addEventListener("dragstart", (e) => { tileDragInProgress = true; a.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
+  a.addEventListener("dragend", () => { tileDragInProgress = false; a.classList.remove("drag"); });
   a.addEventListener("dragover", (e) => { e.preventDefault(); a.classList.add("dragover"); });
   a.addEventListener("dragleave", () => a.classList.remove("dragover"));
   a.addEventListener("drop", (e) => {
@@ -1250,8 +1396,12 @@ function renderAdmin(section) {
         '<div class="row"><label>theme</label><select id="set-theme">' +
           ["auto", "dark", "light"].map(v => '<option value="' + v + '"' + (s.theme === v ? " selected" : "") + ">" + v + "</option>").join("") +
         "</select><label>clock</label><select id=\"set-hour12\"><option value=\"1\"" + (s.hour12 ? " selected" : "") + ">12-hour</option><option value=\"0\"" + (!s.hour12 ? " selected" : "") + ">24-hour</option></select></div>" +
-        '<div class="row"><label>search</label><input id="set-searchname" class="small" value="' + esc(s.search.name) + '"><input id="set-searchurl" value="' + esc(s.search.url) + '"></div>' +
+        '<div class="row"><label>Default search engine</label><select id="set-searchpreset">' +
+          SEARCH_PRESETS.map(p => '<option value="' + esc(p.url) + '"' + (s.search.url === p.url ? " selected" : "") + ">" + esc(p.name) + "</option>").join("") +
+          '<option value="custom"' + (SEARCH_PRESETS.some(p => p.url === s.search.url) ? "" : " selected") + ">Custom</option></select></div>" +
+        '<div class="row"><label>Advanced search override</label><input id="set-searchname" class="small" value="' + esc(s.search.name) + '"><input id="set-searchurl" value="' + esc(s.search.url) + '"></div>' +
         '<p class="hint-text">Use {q} where the query goes.</p>' +
+        '<div class="row"><label>Open tiles in</label><select id="set-openin"><option value="same"' + (s.openIn === "same" ? " selected" : "") + '>Same tab</option><option value="new"' + (s.openIn === "new" ? " selected" : "") + '>New tab</option></select></div>' +
       "</fieldset>" +
 
       '<fieldset class="fieldset"><legend>weather (open-meteo, keyless)</legend>' +
@@ -1311,6 +1461,14 @@ function wireAdmin() {
   $("set-theme").addEventListener("change", (e) => { state.settings.theme = e.target.value; saveState(); applyTheme(); });
   $("set-title").addEventListener("input", (e) => { state.settings.title = e.target.value; $("brand-name").textContent = e.target.value; saveState(); });
   $("set-hour12").addEventListener("change", (e) => { state.settings.hour12 = e.target.value === "1"; saveState(); renderClock(); });
+  $("set-searchpreset").addEventListener("change", (e) => {
+    const preset = SEARCH_PRESETS.find(p => p.url === e.target.value);
+    if (preset) { $("set-searchname").value = preset.name; $("set-searchurl").value = preset.url; }
+  });
+  $("set-searchurl").addEventListener("input", (e) => {
+    const preset = SEARCH_PRESETS.find(p => p.url === e.target.value.trim());
+    $("set-searchpreset").value = preset ? preset.url : "custom";
+  });
   $("btn-geo").addEventListener("click", () => {
     if (!navigator.geolocation) return toast("Geolocation unavailable", true);
     navigator.geolocation.getCurrentPosition(
@@ -1375,6 +1533,7 @@ function collectAdmin() {
   s.title = val("set-title") ?? s.title;
   s.theme = val("set-theme") ?? s.theme;
   const h12 = val("set-hour12"); if (h12 !== undefined) s.hour12 = h12 === "1";
+  s.openIn = val("set-openin") ?? s.openIn;
   s.search.name = val("set-searchname") ?? s.search.name;
   s.search.url = val("set-searchurl") ?? s.search.url;
   const lat = parseFloat(val("set-lat")); const lon = parseFloat(val("set-lon"));
@@ -1439,6 +1598,8 @@ $("btn-refresh").addEventListener("click", async () => {
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeOverlay(); });
 
 renderClock(); setInterval(renderClock, 1000);
+initSearch();
+initWeatherControls();
 initWeather();
 handleOAuthCallback();
 boot();

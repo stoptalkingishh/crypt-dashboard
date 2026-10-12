@@ -240,6 +240,8 @@
   .tile-row input:focus { border-color: var(--accent); }
   .tile-row .url { flex: 0 0 42%; }
   .tile-row .grip { color: var(--faint); cursor: grab; user-select: none; }
+  .tile-row .home-toggle { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .tile-row .home-toggle input { width: auto; min-width: 0; flex: 0 0 auto; padding: 0; }
 
   /* ---------- repo detail modal ---------- */
   .modal-card { width: 100%; max-width: 680px; background: var(--bg-soft); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
@@ -250,9 +252,19 @@
   .quick-add-card { max-width: 500px; }
   .quick-add-form { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
   .quick-add-form label { display: flex; flex-direction: column; gap: 5px; color: var(--muted); font-size: 12px; }
+  .quick-add-form .quick-add-home { flex-direction: row; align-items: center; gap: 7px; }
+  .quick-add-form .quick-add-home input { width: auto; min-width: 0; padding: 0; }
   .quick-add-form input, .quick-add-form select { width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px; outline: none; }
   .quick-add-form input:focus, .quick-add-form select:focus { border-color: var(--accent); }
   .quick-add-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .start-page-card { max-width: 620px; }
+  .start-page-content { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .start-page-content .page-url { display: block; padding: 9px 11px; background: var(--panel); border: 1px solid var(--border); border-radius: 7px; color: var(--accent); overflow-wrap: anywhere; font-size: 12px; }
+  .start-page-content section { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; }
+  .start-page-content h4 { margin: 0 0 5px; color: var(--accent-2); font-size: 13px; }
+  .start-page-content ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: 12px; }
+  .start-page-content li + li { margin-top: 4px; }
+  .start-page-content .note { margin: 0; color: var(--faint); font-size: 11.5px; }
   .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
   .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
   .stat .k { color: var(--faint); font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; }
@@ -277,6 +289,7 @@
     .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     .repo-grid { grid-template-columns: 1fr; }
     .sheet { margin: 0; }
+    .start-page-content { padding: 14px; }
     .row label { min-width: 100%; }
     .tile-row .url { flex: 1 1 100%; }
   }
@@ -334,6 +347,7 @@
     <span id="foot-status">local-only &middot; data in localStorage &middot; optional Google Drive backup</span>
     <span class="spacer"></span>
     <a href="#" id="foot-export">export</a>
+    <a href="#" id="foot-start-page">set as start page</a>
     <a href="#" id="foot-admin">admin</a>
   </footer>
 </div>
@@ -419,31 +433,31 @@ function defaultState() {
     physical: [],
     categories: [
       { id: "home", name: "Home", type: "links", tiles: [
-        { name: "GitHub", url: "https://github.com" },
-        { name: "Hacker News", url: "https://news.ycombinator.com" },
-        { name: "Wikipedia", url: "https://en.wikipedia.org" },
-        { name: "MDN", url: "https://developer.mozilla.org" },
+        { name: "GitHub", url: "https://github.com", home: true },
+        { name: "Hacker News", url: "https://news.ycombinator.com", home: true },
+        { name: "Wikipedia", url: "https://en.wikipedia.org", home: true },
+        { name: "MDN", url: "https://developer.mozilla.org", home: true },
       ] },
       { id: "repos", name: "Repos", type: "github", tiles: [] },
       { id: "scan", name: "Scan", type: "scan", tiles: [] },
       { id: "dev", name: "Dev", type: "links", tiles: [
-        { name: "GitHub", url: "https://github.com" },
-        { name: "Stack Overflow", url: "https://stackoverflow.com" },
-        { name: "MDN", url: "https://developer.mozilla.org" },
-        { name: "npm", url: "https://www.npmjs.com" },
-        { name: "GitLab", url: "https://gitlab.com" },
+        { name: "GitHub", url: "https://github.com", home: true },
+        { name: "Stack Overflow", url: "https://stackoverflow.com", home: true },
+        { name: "MDN", url: "https://developer.mozilla.org", home: true },
+        { name: "npm", url: "https://www.npmjs.com", home: true },
+        { name: "GitLab", url: "https://gitlab.com", home: true },
       ] },
       { id: "ai", name: "AI", type: "links", tiles: [
-        { name: "ChatGPT", url: "https://chatgpt.com" },
-        { name: "Claude", url: "https://claude.ai" },
-        { name: "Perplexity", url: "https://www.perplexity.ai" },
-        { name: "Hugging Face", url: "https://huggingface.co" },
+        { name: "ChatGPT", url: "https://chatgpt.com", home: true },
+        { name: "Claude", url: "https://claude.ai", home: true },
+        { name: "Perplexity", url: "https://www.perplexity.ai", home: true },
+        { name: "Hugging Face", url: "https://huggingface.co", home: true },
       ] },
       { id: "media", name: "Media", type: "links", tiles: [
-        { name: "YouTube", url: "https://www.youtube.com" },
-        { name: "Reddit", url: "https://www.reddit.com" },
-        { name: "Spotify", url: "https://open.spotify.com" },
-        { name: "Twitch", url: "https://www.twitch.tv" },
+        { name: "YouTube", url: "https://www.youtube.com", home: true },
+        { name: "Reddit", url: "https://www.reddit.com", home: true },
+        { name: "Spotify", url: "https://open.spotify.com", home: true },
+        { name: "Twitch", url: "https://www.twitch.tv", home: true },
       ] },
     ],
   };
@@ -474,7 +488,10 @@ function migrate(s) {
   if (!s.library || !Array.isArray(s.library.items)) s.library = def.library;
   if (!Array.isArray(s.physical)) s.physical = [];
   if (!Array.isArray(s.categories) || !s.categories.length) s.categories = def.categories;
-  s.categories.forEach(c => { if (!Array.isArray(c.tiles)) c.tiles = []; });
+  s.categories.forEach(c => {
+    if (!Array.isArray(c.tiles)) c.tiles = [];
+    c.tiles.forEach(t => { t.home = t.home !== false; });
+  });
   return s;
 }
 function saveState() {
@@ -821,6 +838,17 @@ function renderTabs() {
   });
 }
 function currentCategory() { return state.categories.find(c => c.id === activeCat); }
+function homeAggregateTiles() {
+  const seen = new Set();
+  return state.categories.flatMap(category => category.tiles.map((tile, index) => ({ category, tile, index })).filter(({ tile }) => {
+    if (tile.home === false) return false;
+    let url;
+    try { url = new URL(tile.url).href; } catch { url = String(tile.url || "").trim(); }
+    if (seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  }));
+}
 
 /* ---------- launcher grid ---------- */
 function renderGrid() {
@@ -828,7 +856,10 @@ function renderGrid() {
   grid.innerHTML = "";
   const cat = currentCategory();
   if (!cat) return;
-  cat.tiles.forEach((t, idx) => grid.appendChild(tileEl(t, cat, idx)));
+  const displayTiles = activeCat === "home"
+    ? homeAggregateTiles()
+    : cat.tiles.map((tile, index) => ({ category: cat, tile, index }));
+  displayTiles.forEach(item => grid.appendChild(tileEl(item.tile, item.category, item.index, activeCat !== "home")));
   const tiles = [...grid.querySelectorAll(".tile:not(.add)")];
   if (focusedTileIndex >= tiles.length) focusedTileIndex = tiles.length - 1;
   if (focusedTileIndex >= 0) setTileFocus(focusedTileIndex, true);
@@ -841,12 +872,12 @@ function renderGrid() {
   add.addEventListener("click", openQuickAddModal);
   grid.appendChild(add);
 }
-function tileEl(t, cat, idx) {
+function tileEl(t, cat, idx, enableDrag = true) {
   const a = document.createElement("a");
   a.className = "tile";
   a.href = t.url;
   if (state.settings.openIn === "new") { a.target = "_blank"; a.rel = "noopener noreferrer"; }
-  a.setAttribute("draggable", "true");
+  a.draggable = enableDrag;
   a.tabIndex = idx === 0 ? 0 : -1;
   a.dataset.idx = idx;
   const badge = t.badge ? '<span class="badge">' + esc(t.badge) + "</span>" : "";
@@ -856,21 +887,22 @@ function tileEl(t, cat, idx) {
     '<div class="name">' + esc(t.name) + "</div>" +
     '<div class="sub">' + esc(t.sub || hostOf(t.url) || "") + "</div>";
   loadFavicon(a.querySelector(".fav"), t.url);
-  // drag reorder
-  a.addEventListener("dragstart", (e) => { tileDragInProgress = true; a.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
-  a.addEventListener("dragend", () => { tileDragInProgress = false; a.classList.remove("drag"); });
-  a.addEventListener("dragover", (e) => { e.preventDefault(); a.classList.add("dragover"); });
-  a.addEventListener("dragleave", () => a.classList.remove("dragover"));
-  a.addEventListener("drop", (e) => {
-    e.preventDefault(); a.classList.remove("dragover");
-    const from = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    const to = idx;
-    if (isNaN(from) || from === to) return;
-    const arr = cat.tiles;
-    const [moved] = arr.splice(from, 1);
-    arr.splice(to, 0, moved);
-    saveState(); renderGrid();
-  });
+  if (enableDrag) {
+    a.addEventListener("dragstart", (e) => { tileDragInProgress = true; a.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); });
+    a.addEventListener("dragend", () => { tileDragInProgress = false; a.classList.remove("drag"); });
+    a.addEventListener("dragover", (e) => { e.preventDefault(); a.classList.add("dragover"); });
+    a.addEventListener("dragleave", () => a.classList.remove("dragover"));
+    a.addEventListener("drop", (e) => {
+      e.preventDefault(); a.classList.remove("dragover");
+      const from = parseInt(e.dataTransfer.getData("text/plain"), 10);
+      const to = idx;
+      if (isNaN(from) || from === to) return;
+      const arr = cat.tiles;
+      const [moved] = arr.splice(from, 1);
+      arr.splice(to, 0, moved);
+      saveState(); renderGrid();
+    });
+  }
   return a;
 }
 
@@ -1042,6 +1074,22 @@ async function openRepoModal(full) {
 }
 function stat(k, v) { return '<div class="stat"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div></div>"; }
 function closeOverlay() { const o = $("overlay"); o.hidden = true; o.innerHTML = ""; o.onclick = null; }
+function openStartPageHelp() {
+  const overlay = $("overlay");
+  overlay.hidden = false;
+  overlay.innerHTML =
+    '<div class="modal-card start-page-card" role="dialog" aria-modal="true" aria-labelledby="start-page-title">' +
+      '<div class="mhead"><div style="flex:1"><h3 id="start-page-title">&#128204; Set as start page</h3><div class="sub">Use this page URL in your browser settings.</div></div><button class="btn" type="button" onclick="closeOverlay()">close</button></div>' +
+      '<div class="start-page-content">' +
+        '<code class="page-url">' + esc(location.href) + '</code>' +
+        '<section><h4>Chrome / Edge / Brave</h4><ol><li>Open Settings &rarr; On startup.</li><li>Choose “Open a specific page or set of pages” and add the URL above.</li><li>To change the New Tab page, use an extension or a dedicated start-page install flow; a plain site cannot replace it by itself.</li></ol></section>' +
+        '<section><h4>Firefox</h4><ol><li>Open Settings &rarr; Home.</li><li>Under “Homepage and new windows,” choose “Custom URLs” and paste the URL above.</li><li>Firefox will open it for new windows when that homepage option is selected.</li></ol></section>' +
+        '<section><h4>Safari</h4><ol><li>On Mac, use File &rarr; Add to Dock for an app-like launch, or open Safari &rarr; Settings &rarr; General and paste the URL above in “Homepage.”</li><li>Set “New windows open with” to “Homepage” so Safari opens new windows with it.</li><li>On iPhone or iPad, use Share &rarr; Add to Home Screen for an app-like launch.</li></ol></section>' +
+        '<p class="note">Browsers gate New Tab pages; replacing one fully requires an extension or an installed shortcut/PWA. Bookmarks and homepage settings sync across devices when browser sync is on.</p>' +
+      '</div>' +
+    '</div>';
+  overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
+}
 function openQuickAddModal() {
   const categories = state.categories.filter(c => c.type === "links");
   if (!categories.length) { toast("Add a links category in Admin first", true); return; }
@@ -1056,6 +1104,7 @@ function openQuickAddModal() {
         '<label for="quick-add-url">URL<input id="quick-add-url" name="url" type="text" inputmode="url" placeholder="example.com" autocomplete="url"></label>' +
         '<label for="quick-add-name">Name <span>(optional)</span><input id="quick-add-name" name="name" type="text" autocomplete="off"></label>' +
         '<label for="quick-add-category">Category<select id="quick-add-category" name="category">' + options + "</select></label>" +
+        '<label class="quick-add-home"><input id="quick-add-home" name="home" type="checkbox" checked> Show on Home</label>' +
         '<div class="quick-add-actions"><button class="btn" type="button" data-quick-close>cancel</button><button class="btn primary" type="submit">Add site</button></div>' +
       "</form>" +
     "</div>";
@@ -1079,7 +1128,7 @@ function openQuickAddModal() {
     const category = categories.find(c => c.id === $("quick-add-category").value);
     if (!category) { toast("Choose a valid category", true); return; }
     const name = $("quick-add-name").value.trim() || hostOf(url);
-    category.tiles.push({ name, url });
+    category.tiles.push({ name, url, home: $("quick-add-home").checked });
     activeCat = category.id;
     focusedTileIndex = -1;
     saveState();
@@ -1529,7 +1578,7 @@ function parseBookmarks(text) {
     for (let parent = anchor.parentElement; parent; parent = parent.parentElement) {
       if (parent.tagName === "DT" && folderForDt.has(parent)) { folder = folderForDt.get(parent); break; }
     }
-    (folder ? folder.links : rootLinks).push({ name: anchor.textContent.trim() || url.href, url: url.href });
+    (folder ? folder.links : rootLinks).push({ name: anchor.textContent.trim() || url.href, url: url.href, home: true });
   });
   if (!rootLinks.length && ![...folders.values()].some(folder => folder.links.length)) throw new Error("empty bookmarks");
   return { folders: [...folders.values()], rootLinks };
@@ -1597,6 +1646,7 @@ function renderAdmin(section) {
         '<div class="tile-row" data-ci="' + ci + '" data-ti="' + ti + '">' +
           '<input class="tname" value="' + esc(t.name) + '" placeholder="name">' +
           '<input class="url" value="' + esc(t.url) + '" placeholder="https://…">' +
+          '<label class="home-toggle"><input class="thome" type="checkbox"' + (t.home !== false ? " checked" : "") + '> home</label>' +
           '<button class="btn danger del-tile" data-ci="' + ci + '" data-ti="' + ti + '">&#10005;</button>' +
         "</div>"
       ).join("") + '<button class="btn add-tile" data-ci="' + ci + '">+ tile</button>';
@@ -1717,7 +1767,7 @@ function wireAdmin() {
   }));
   overlay.querySelectorAll(".add-tile").forEach(b => b.addEventListener("click", () => {
     collectAdmin();
-    state.categories[+b.dataset.ci].tiles.push({ name: "New site", url: "https://example.com" }); saveState(); renderAdmin();
+    state.categories[+b.dataset.ci].tiles.push({ name: "New site", url: "https://example.com", home: true }); saveState(); renderAdmin();
   }));
   overlay.querySelectorAll(".del-cat").forEach(b => b.addEventListener("click", () => {
     collectAdmin();
@@ -1786,6 +1836,7 @@ function collectAdmin() {
     cat.tiles = rows.map(r => ({
       name: r.querySelector(".tname").value.trim() || "untitled",
       url: r.querySelector(".url").value.trim() || "#",
+      home: r.querySelector(".thome").checked,
     }));
   });
   saveState();
@@ -1815,6 +1866,7 @@ $("btn-theme").addEventListener("click", () => {
 });
 $("btn-admin").addEventListener("click", () => openAdmin());
 $("foot-admin").addEventListener("click", (e) => { e.preventDefault(); openAdmin(); });
+$("foot-start-page").addEventListener("click", (e) => { e.preventDefault(); openStartPageHelp(); });
 $("foot-export").addEventListener("click", (e) => { e.preventDefault(); const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "crypt-dashboard-config.json"; a.click(); });
 $("btn-import").addEventListener("click", () => openAdmin());
 $("btn-refresh").addEventListener("click", async () => {

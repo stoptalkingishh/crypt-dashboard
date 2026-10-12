@@ -20,6 +20,10 @@
 
 ## Next
 
+- [ ] **Monitor tab (Checkmk)** — PoC-gated: prove CORS + Private Network
+      Access from the deployed origin first, per [MONITORING.md](MONITORING.md).
+      If the proof fails, link-out tiles remain the answer (no proxy — no
+      backend). Link-out tiles themselves need no work.
 - [ ] **News & media-bias module** — implement per [NEWS.md](NEWS.md): RSS proxy,
       TF-IDF clustering, bias bar, blindspot, framing divergence, Gemini briefings.
 - [ ] Google OAuth: create the client, set repo secrets

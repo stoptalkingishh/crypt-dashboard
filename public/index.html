@@ -265,6 +265,13 @@
   .start-page-content ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: 12px; }
   .start-page-content li + li { margin-top: 4px; }
   .start-page-content .note { margin: 0; color: var(--faint); font-size: 11.5px; }
+  .faq-card { max-width: 760px; }
+  .faq-content { padding: 14px 20px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .faq-content details { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; }
+  .faq-content summary { padding: 11px 13px; color: var(--text); cursor: pointer; font-size: 12.5px; font-weight: 600; }
+  .faq-content summary:hover, .faq-content summary:focus-visible { color: var(--accent); }
+  .faq-content details p { margin: 0; padding: 0 13px 12px; color: var(--muted); font-size: 12px; }
+  .faq-content a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
   .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
   .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; }
   .stat .k { color: var(--faint); font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; }
@@ -290,6 +297,7 @@
     .repo-grid { grid-template-columns: 1fr; }
     .sheet { margin: 0; }
     .start-page-content { padding: 14px; }
+    .faq-content { padding: 12px 14px 14px; }
     .row label { min-width: 100%; }
     .tile-row .url { flex: 1 1 100%; }
   }
@@ -348,6 +356,7 @@
     <span class="spacer"></span>
     <a href="#" id="foot-export">export</a>
     <a href="#" id="foot-start-page">set as start page</a>
+    <a href="#" id="foot-faq">faq</a>
     <a href="#" id="foot-admin">admin</a>
   </footer>
 </div>
@@ -1089,6 +1098,36 @@ function openStartPageHelp() {
       '</div>' +
     '</div>';
   overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
+}
+function openFaq() {
+  const overlay = $("overlay");
+  overlay.hidden = false;
+  overlay.innerHTML = `
+    <div class="modal-card faq-card" role="dialog" aria-modal="true" aria-labelledby="faq-title">
+      <div class="mhead"><div style="flex:1"><h3 id="faq-title">Frequently asked questions</h3><div class="sub">A quick guide to the launcher and its data.</div></div><button class="btn" type="button" onclick="closeOverlay()">close</button></div>
+      <div class="faq-content">
+        <details><summary>Is it free and private?</summary><p>Yes. This is a static site with no account required to use the launcher; your settings and tiles live in this browser's localStorage, with optional backup to your own Google Drive after Google sign-in. There is no app server to store your data; lookups such as favicons, weather, GitHub data, and optional barcode/media metadata contact their providers or configured proxy.</p></details>
+        <details><summary>How are favicons cached?</summary><p>Favicons are fetched when needed and cached locally in your browser's Cache Storage, so later visits can reuse them. If an icon cannot be loaded, the tile falls back to a letter.</p></details>
+        <details><summary>How do I move my setup to another device?</summary><p>Export JSON from the footer or Admin, then import that file on the other device. You can also use your own Google Drive backup, or import browser bookmarks from a Netscape-format HTML export.</p></details>
+        <details><summary>How does weather work?</summary><p>Search for a city or choose “use my location”; the app gets current conditions and a four-day forecast from keyless Open-Meteo services. Choose Fahrenheit or Celsius in Admin; city search and forecast requests go to Open-Meteo.</p></details>
+        <details><summary>What are search bangs?</summary><p>Put a bang in the search box to send a query straight to a service, such as <code>!g</code> Google, <code>!gh</code> GitHub, or <code>!yt</code> YouTube. The hint bar below the search box lists available bangs; a bare bang opens that service.</p></details>
+        <details><summary>How do I export my bookmarks or app data?</summary><p>Use <a href="#" id="faq-export">export</a> in the footer or Admin's JSON export/import controls for app data. To bring in bookmarks, export them as Netscape HTML from your browser and choose Admin → import bookmarks.</p></details>
+        <details><summary>How do I set this as my start page?</summary><p>Use the footer's <a href="#" id="faq-start-page">set as start page</a> helper for steps for Chrome/Edge/Brave, Firefox, and Safari. The available homepage and startup options vary by browser.</p></details>
+        <details><summary>Can this replace my browser's New Tab page?</summary><p>A plain website cannot replace the New Tab page by itself. Some browsers require an extension or an installed shortcut/PWA for that behavior.</p></details>
+        <details><summary>How do tiles and Home visibility work?</summary><p>Add a site with quick add or manage categories and links in Admin. Use “Show on Home” (or the Admin home checkbox) to choose which links appear on the Home view.</p></details>
+        <details><summary>Do I need Google sign-in or a GitHub account?</summary><p>No sign-in is needed for the basic launcher; Google sign-in is optional for your Drive backup. The GitHub dashboard loads repositories you configure, and a GitHub token is only needed for private-repository access.</p></details>
+      </div>
+    </div>`;
+  overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
+  $("faq-export").addEventListener("click", (e) => {
+    e.preventDefault();
+    closeOverlay();
+    $("foot-export").click();
+  });
+  $("faq-start-page").addEventListener("click", (e) => {
+    e.preventDefault();
+    openStartPageHelp();
+  });
 }
 function openQuickAddModal() {
   const categories = state.categories.filter(c => c.type === "links");
@@ -1867,6 +1906,7 @@ $("btn-theme").addEventListener("click", () => {
 $("btn-admin").addEventListener("click", () => openAdmin());
 $("foot-admin").addEventListener("click", (e) => { e.preventDefault(); openAdmin(); });
 $("foot-start-page").addEventListener("click", (e) => { e.preventDefault(); openStartPageHelp(); });
+$("foot-faq").addEventListener("click", (e) => { e.preventDefault(); openFaq(); });
 $("foot-export").addEventListener("click", (e) => { e.preventDefault(); const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "crypt-dashboard-config.json"; a.click(); });
 $("btn-import").addEventListener("click", () => openAdmin());
 $("btn-refresh").addEventListener("click", async () => {

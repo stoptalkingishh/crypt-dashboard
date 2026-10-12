@@ -13,6 +13,10 @@
 - [x] Docs, checks (`make check`), attribution
 - [x] Collection: Jellyfin snapshot import + barcode/UPC ownership check
       ([COLLECTION.md](COLLECTION.md))
+- [x] Reference-homescreen parity issues #1–#11 (keyboard nav, bookmarks import,
+      weather city/forecast, start-page helper, favicon cache, Show-on-Home,
+      search-engine picker, open-in, quick add-site, FAQ — FAQ is the lone
+      follow-up if reopened)
 
 ## Next
 

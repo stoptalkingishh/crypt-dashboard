@@ -11,8 +11,12 @@ The shipped defaults are generic.
 
 ## Features
 
-- **Start page** — clock/date, keyless weather (Open-Meteo), `!bang` search,
-  categorized tiles with auto-fetched favicons, drag-to-reorder, theme.
+- **Start page** — clock/date, keyless weather (current + 4-day forecast, city
+  search, geolocation), `!bang` search, arrow-key tile navigation, categorized
+  tiles with cached favicons, quick add-site modal, per-tile Show-on-Home
+  aggregate, drag-to-reorder, theme.
+- **Imports & helpers** — JSON export/import, Netscape bookmarks HTML import
+  (folders → categories), and a "set as start page" per-browser helper.
 - **GitHub repo dashboard** — live REST data per repo: stars, forks, open issues,
   language breakdown, recent commits; filter/sort; repo detail modal.
 - **Google sign-in** — Authorization Code + PKCE, client-side. Profile/avatar,

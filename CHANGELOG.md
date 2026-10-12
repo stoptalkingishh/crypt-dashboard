@@ -15,6 +15,14 @@ All notable changes are documented here. Format loosely follows
   defaults are generic; personal config is entered in Admin at runtime.
 
 ### Added
+- **Launcher parity with the reference homescreen** (issues #1–#11): arrow-key
+  tile navigation (#1), Netscape bookmarks HTML import (#2), weather city
+  search + use-my-location (#3) and a 4-day forecast (#4), set-as-start-page
+  helper (#5), favicon caching in Cache Storage (#6), per-tile Show-on-Home with
+  Home as an aggregate tab (#7), default search-engine picker (#8), Open-tiles-in
+  same/new tab (#9), and the quick "＋ Add site" tile + modal (#10).
+- **Fixed the search bar being dead**: `initSearch()` was defined but never
+  called, so form submit, bang hint, `/` focus, and type-to-search never ran.
 - **Collection & barcode scanner** — a `scan` view that looks a scanned/typed
   UPC up (UPCitemdb through a configurable proxy, TMDB metadata optional) and
   reports `OWNED · server`, `OWNED · physical`, or `NOT OWNED` against a
